@@ -8,3 +8,9 @@ herdr/.config/herdr/.plugins.lock
 # Editor/backup cruft
 *.bak
 *.bak.*
+
+# Omarchy-managed live theme symlinks (regenerated per-machine by
+# omarchy-theme-set / /usr/share/omarchy/install/user/theme.sh) -
+# not portable, must not be tracked.
+nvim/.config/nvim/lua/plugins/theme.lua
+btop/.config/btop/themes/current.theme
