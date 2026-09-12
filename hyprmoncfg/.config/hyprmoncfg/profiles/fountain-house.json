@@ -1,0 +1,67 @@
+{
+  "name": "Fountain House",
+  "created_at": "2026-09-07T13:38:12.31830647Z",
+  "updated_at": "2026-09-08T07:05:20.73109932Z",
+  "outputs": [
+    {
+      "key": "apple computer inc|color lcd",
+      "match_key": "apple computer inc|color lcd",
+      "name": "eDP-1",
+      "description": "Apple Computer Inc Color LCD",
+      "make": "Apple Computer Inc",
+      "model": "Color LCD",
+      "enabled": true,
+      "mode": "2880x1800@60.00Hz",
+      "width": 2880,
+      "height": 1800,
+      "refresh": 60.001,
+      "x": 1777,
+      "y": 1152,
+      "scale": 2,
+      "transform": 0,
+      "bitdepth": 8,
+      "cm": "srgb",
+      "sdr_brightness": 1,
+      "sdr_saturation": 1,
+      "sdr_min_luminance": 0.2,
+      "sdr_max_luminance": 80,
+      "min_luminance": 0
+    },
+    {
+      "key": "dell inc.|dell p2723de|2050vz3",
+      "match_key": "dell inc.|dell p2723de|2050vz3",
+      "name": "DP-1",
+      "description": "Dell Inc. DELL P2723DE 2050VZ3",
+      "make": "Dell Inc.",
+      "model": "DELL P2723DE",
+      "serial": "2050VZ3",
+      "enabled": true,
+      "mode": "2560x1440@59.95Hz",
+      "width": 2560,
+      "height": 1440,
+      "refresh": 59.951,
+      "x": 1440,
+      "y": 0,
+      "scale": 1.25,
+      "transform": 0,
+      "bitdepth": 8,
+      "cm": "srgb",
+      "sdr_brightness": 1,
+      "sdr_saturation": 1,
+      "sdr_min_luminance": 0.2,
+      "sdr_max_luminance": 80,
+      "min_luminance": 0
+    }
+  ],
+  "workspaces": {
+    "enabled": false,
+    "strategy": "sequential",
+    "max_workspaces": 9,
+    "group_size": 3,
+    "monitor_order": [
+      "apple computer inc|color lcd",
+      "dell inc.|dell p2723de|2050vz3"
+    ]
+  },
+  "exec": ""
+}

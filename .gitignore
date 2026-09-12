@@ -1,0 +1,10 @@
+# Runtime/state files that shouldn't be version-controlled
+herdr/.config/herdr/*.sock
+herdr/.config/herdr/*.log
+herdr/.config/herdr/session.json
+herdr/.config/herdr/release-notes.json
+herdr/.config/herdr/.plugins.lock
+
+# Editor/backup cruft
+*.bak
+*.bak.*
