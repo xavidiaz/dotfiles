@@ -14,3 +14,8 @@ herdr/.config/herdr/.plugins.lock
 # not portable, must not be tracked.
 nvim/.config/nvim/lua/plugins/theme.lua
 btop/.config/btop/themes/current.theme
+
+# hyprmoncfg's live-applied monitor config (regenerated per-machine from
+# whichever profile matches the connected displays) - not portable, must
+# not be tracked. Only the profiles/ directory is portable dotfile data.
+hypr/.config/hypr/hyprmoncfg-monitors.lua
