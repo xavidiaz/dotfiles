@@ -17,6 +17,18 @@ return {
     ---@module 'roslyn.config'
     ---@type RoslynNvimConfig
     opts = {},
+    -- roslyn.nvim starts the server with `--daemon-mode` (one process shared
+    -- across Neovim instances). In that mode the server never sends
+    -- `razor/updateHtml` to us, so no `__virtual.html` buffer is created,
+    -- every HTML-forwarded request comes back empty, and completion in
+    -- .razor markup returns nothing at all. Run a dedicated server instead.
+    -- Has to be `init`, not `config`: the plugin's own plugin/roslyn.lua
+    -- enables (and starts) the client while lazy.nvim is still loading it.
+    init = function()
+      vim.lsp.config("roslyn", {
+        cmd = { vim.fs.joinpath(vim.fn.stdpath("data"), "mason", "bin", "roslyn-language-server"), "--stdio" },
+      })
+    end,
   },
 
   -- Razor support needs roslyn-language-server >= 5.12.0-1.26453.19,
@@ -96,9 +108,11 @@ return {
   -- Format C# with csharpier (Mason-installed, v1.x). The LazyVim extra
   -- already maps `cs -> csharpier`; this is just here to be explicit.
   -- Razor is deliberately left out: csharpier doesn't format .cshtml/.razor
-  -- over stdin, and roslyn.nvim's own LSP-based Razor formatting is broken
-  -- upstream as of writing (seblyng/roslyn.nvim#386) — nothing to plug in
-  -- yet. Linting needs no separate config either: Roslyn's compiler +
+  -- over stdin. With no conform formatter, LazyVim falls back to LSP
+  -- formatting, and Roslyn formats Razor itself (markup and `@` blocks; C#
+  -- inside `@code {}` only lightly) — as long as the `html` client is
+  -- attached, since Roslyn abandons the whole format if the HTML part comes
+  -- back empty. Linting needs no separate config either: Roslyn's compiler +
   -- analyzer diagnostics apply to `razor` buffers the same as `cs` once the
   -- LSP client above is attached.
   {
