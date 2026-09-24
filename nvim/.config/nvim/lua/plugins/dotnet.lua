@@ -65,6 +65,13 @@ return {
     opts = { ensure_installed = { "razor" } },
   },
 
+  -- Auto-close/rename tags in Razor markup like in HTML. nvim-ts-autotag
+  -- only acts on filetypes it knows, and `razor` isn't one of them.
+  {
+    "windwp/nvim-ts-autotag",
+    opts = { aliases = { razor = "html" } },
+  },
+
   -- Debugging: enable the `dap.core` LazyVim extra (`:LazyExtras`) to pull in
   -- nvim-dap; LazyVim's `lang.dotnet` extra then wires the `netcoredbg`
   -- adapter and a `dap.configurations.cs` "Launch file" config for you.
