@@ -46,6 +46,13 @@ return {
       opts.servers.omnisharp = { enabled = false }
       opts.servers.roslyn_ls = { enabled = false }
       opts.servers.fsautocomplete = { enabled = false }
+      -- Required for Razor: Roslyn forwards the HTML parts of a .razor file
+      -- to an `html` client attached to a hidden `*__virtual.html` buffer.
+      -- Without one, roslyn.nvim blocks the UI in `vim.wait(5000, ...)` on
+      -- every forwarded request (document highlight on cursor move, hover,
+      -- completion...), freezing Neovim for 5s at a time. Mason installs
+      -- `html-lsp` for this automatically.
+      opts.servers.html = {}
     end,
   },
   { "Hoffs/omnisharp-extended-lsp.nvim", enabled = false },
