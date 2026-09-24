@@ -1,19 +1,39 @@
--- .NET / C# setup, layered on LazyVim's `lang.dotnet` extra (enabled in
--- lazyvim.json). That extra wires up OmniSharp; here we disable it and use
--- the Roslyn language server (via roslyn.nvim) instead.
+-- .NET / C# / Razor setup, layered on LazyVim's `lang.dotnet` extra (enabled
+-- in lazyvim.json). That extra wires up OmniSharp; here we disable it and use
+-- the Roslyn language server (via roslyn.nvim) instead, which also drives
+-- Razor (.razor/.cshtml, filetype `razor`) support via Roslyn's "co-hosting"
+-- feature. This supersedes the old rzls.nvim plugin — do not install it or
+-- the standalone `rzls` server alongside this.
 return {
-  -- Roslyn LSP. Server binary comes from Mason (`roslyn-language-server`),
-  -- which roslyn.nvim picks up from $PATH (Mason's bin dir is on it).
+  -- Roslyn LSP, now attaching to `cs` AND `razor` buffers (`razor` is
+  -- Neovim's built-in filetype for both .razor and .cshtml). The `ft` key
+  -- controls when lazy.nvim loads this plugin at all, and loading it is what
+  -- runs `vim.lsp.enable("roslyn")` — leaving out "razor" here means the
+  -- server never starts for a session that opens a .razor file before any
+  -- .cs file.
   {
     "seblyng/roslyn.nvim",
-    ft = "cs",
+    ft = { "cs", "razor" },
     ---@module 'roslyn.config'
     ---@type RoslynNvimConfig
     opts = {},
   },
+
+  -- Razor support needs roslyn-language-server >= 5.12.0-1.26453.19,
+  -- but Mason's default nuget.org source lags behind (5.11.x as of writing).
+  -- Add Crashdummyy's registry and install its `roslyn` package instead: it
+  -- tracks the same version vscode-csharp ships, and still exposes the
+  -- binary as `roslyn-language-server` on $PATH, which is the exact name
+  -- roslyn.nvim looks for — no further config needed.
+  -- One-time cleanup after switching: `:MasonUninstall roslyn-language-server`.
   {
     "mason-org/mason.nvim",
-    opts = { ensure_installed = { "roslyn-language-server" } },
+    opts = function(_, opts)
+      opts.registries = opts.registries or { "github:mason-org/mason-registry" }
+      table.insert(opts.registries, "github:Crashdummyy/mason-registry")
+      opts.ensure_installed = opts.ensure_installed or {}
+      table.insert(opts.ensure_installed, "roslyn")
+    end,
   },
 
   -- Keep every C# server except roslyn.nvim's `roslyn` client from attaching.
@@ -30,15 +50,43 @@ return {
   },
   { "Hoffs/omnisharp-extended-lsp.nvim", enabled = false },
 
-  -- Not doing test/debug integration yet. Enable the `test.core` / `dap.core`
-  -- LazyVim extras (`:LazyExtras`) and delete these lines when you want them.
+  -- Treesitter grammar for Razor, for highlighting/indent/folds inside
+  -- .razor/.cshtml. Queries ship with nvim-treesitter itself; filetype
+  -- `razor` maps to parser `razor` automatically, no extra wiring needed.
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = { ensure_installed = { "razor" } },
+  },
+
+  -- Debugging: enable the `dap.core` LazyVim extra (`:LazyExtras`) to pull in
+  -- nvim-dap; LazyVim's `lang.dotnet` extra then wires the `netcoredbg`
+  -- adapter and a `dap.configurations.cs` "Launch file" config for you.
+  -- Razor markup itself has no useful breakpoints — set them in the .cs
+  -- code-behind or in `@code {}` blocks (compiled to C#) instead. This just
+  -- aliases the launch config so `<leader>dc` also works with focus in a
+  -- .razor buffer.
+  {
+    "mfussenegger/nvim-dap",
+    optional = true,
+    opts = function()
+      local dap = require("dap")
+      dap.configurations.razor = dap.configurations.cs
+    end,
+  },
+
+  -- Not doing test integration yet. Enable the `test.core` LazyVim extra
+  -- and delete these lines when you want it.
   { "nvim-neotest/neotest", optional = true, enabled = false },
   { "Nsidorenco/neotest-vstest", optional = true, enabled = false },
 
   -- Format C# with csharpier (Mason-installed, v1.x). The LazyVim extra
   -- already maps `cs -> csharpier`; this is just here to be explicit.
-  -- Note: csharpier 1.2.x does not format .cshtml/.razor via stdin (returns
-  -- nothing), so those files (filetype `razor`) are left unformatted.
+  -- Razor is deliberately left out: csharpier doesn't format .cshtml/.razor
+  -- over stdin, and roslyn.nvim's own LSP-based Razor formatting is broken
+  -- upstream as of writing (seblyng/roslyn.nvim#386) — nothing to plug in
+  -- yet. Linting needs no separate config either: Roslyn's compiler +
+  -- analyzer diagnostics apply to `razor` buffers the same as `cs` once the
+  -- LSP client above is attached.
   {
     "stevearc/conform.nvim",
     optional = true,

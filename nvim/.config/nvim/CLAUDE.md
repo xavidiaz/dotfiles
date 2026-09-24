@@ -26,20 +26,23 @@ A personal Neovim configuration built on [LazyVim](https://github.com/LazyVim/La
 
 ### LazyVim extras
 
-Enabled extras live in `lazyvim.json` (`extras` array), not in Lua. Edit that file or use `:LazyExtras` — do not hand-write specs that an extra already provides. Notable: `ai.claudecode`, `lang.dotnet`, `lang.typescript`, `lang.tailwind`, `editor.neo-tree`, `util.rest`.
+Enabled extras live in `lazyvim.json` (`extras` array), not in Lua. Edit that file or use `:LazyExtras` — do not hand-write specs that an extra already provides. Notable: `ai.claudecode`, `dap.core`, `lang.dotnet`, `lang.typescript`, `lang.tailwind`, `editor.neo-tree`, `util.rest`.
 
 ### `lua/plugins/` — customization pattern
 
 Each file returns a lazy.nvim spec fragment. To tune a LazyVim plugin, re-declare it by URL with `opts = {...}` (deep-merged) or `opts = function(_, opts)` (for lists). Examples: `snacks-animated-scrolling-off.lua`, `disable-news-alert.lua`. `example.lua` is an inert reference (guarded by `if true then return {} end`) — never enable it.
 
-### `lua/plugins/dotnet.lua` — C# / .NET
+### `lua/plugins/dotnet.lua` — C# / .NET / Razor
 
-LazyVim's `lang.dotnet` extra (v16, enabled in `lazyvim.json`) sets up **OmniSharp**. This file overrides that to use **Roslyn** instead:
+LazyVim's `lang.dotnet` extra (v16, enabled in `lazyvim.json`) sets up **OmniSharp**. This file overrides that to use **Roslyn** instead, which also covers Razor:
 
-- Adds `seblyng/roslyn.nvim` (`ft = "cs"`); the server binary is the Mason package `roslyn-language-server`, found via `$PATH`.
+- Adds `seblyng/roslyn.nvim` (`ft = { "cs", "razor" }`, `razor` being Neovim's built-in filetype for `.razor`/`.cshtml`). Razor support comes from Roslyn's "co-hosting" feature and supersedes the old `rzls.nvim` — don't install that plugin or the standalone `rzls` server alongside this.
+- Server binary is the Mason package `roslyn` (Crashdummyy's registry, added here), found via `$PATH` as `roslyn-language-server`. Mason's default `roslyn-language-server` package (from nuget.org) lags behind and doesn't support Razor until `5.12.0-1.26453.19+`; Crashdummyy's `roslyn` tracks the vscode-csharp version instead. If migrating, `:MasonUninstall roslyn-language-server` once `roslyn` is installed.
 - Sets `omnisharp`, `roslyn_ls`, and `fsautocomplete` to `{ enabled = false }` in the lspconfig opts. `enabled = false` (not `nil`) is required — it adds the server to mason-lspconfig's `automatic_enable` exclude list, otherwise mason-lspconfig starts any server whose package is installed on disk. Both `OmniSharp` and `roslyn_ls` packages are installed, so all three previously attached to every `.cs` buffer at once.
-- Disables `neotest` / `neotest-vstest` (no test/debug integration yet — enable the `test.core` / `dap.core` extras via `:LazyExtras` to add it back).
-- Formatting: `csharpier` (Mason, v1.x) via conform, format-on-save. `.cshtml`/`.razor` (filetype `razor`) are **not** formatted — csharpier 1.2.x returns nothing for Razor over stdin.
+- Adds `razor` to nvim-treesitter's `ensure_installed` (highlight/injection/fold queries ship with nvim-treesitter already; filetype `razor` maps to the `razor` parser automatically).
+- Debugging: `dap.core` extra is enabled (`lazyvim.json`), which — combined with `lang.dotnet` — gives `netcoredbg` + a `dap.configurations.cs` "Launch file" config. This file aliases `dap.configurations.razor = dap.configurations.cs` so `<leader>dc` works with focus in a `.razor` buffer; there's no real Razor-markup debugging, breakpoints belong in `.cs` code-behind or `@code {}` blocks.
+- Disables `neotest` / `neotest-vstest` (no test integration yet — enable the `test.core` extra via `:LazyExtras` to add it back).
+- Formatting: `csharpier` (Mason, v1.x) via conform, format-on-save, `cs` only. `.cshtml`/`.razor` are **not** formatted — csharpier doesn't handle Razor over stdin, and roslyn.nvim's own LSP-based Razor formatting is broken upstream as of writing (seblyng/roslyn.nvim#386). Linting needs no separate setup: Roslyn's compiler/analyzer diagnostics apply to `razor` buffers the same as `cs` once the LSP client attaches.
 
 Format-on-save is global (`vim.g.autoformat = true` in `options.lua`).
 
