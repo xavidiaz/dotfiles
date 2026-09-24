@@ -4,8 +4,6 @@
 
 hl.config({
   input = {
-    kb_layout = "se",
-    kb_variant = "mac",
   },
 })
 
