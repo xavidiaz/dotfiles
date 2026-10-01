@@ -65,6 +65,9 @@ return {
       -- completion...), freezing Neovim for 5s at a time. Mason installs
       -- `html-lsp` for this automatically.
       opts.servers.html = {}
+      -- Not a real server: an in-process one that adds "Fill object
+      -- initializer" code actions for `new Foo { }` next to Roslyn's own.
+      opts.servers.cs_object_initializer = require("config.cs_object_initializer").config
     end,
   },
   { "Hoffs/omnisharp-extended-lsp.nvim", enabled = false },
