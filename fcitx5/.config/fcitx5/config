@@ -1,0 +1,6 @@
+[Hotkey]
+# Don't steal Ctrl+Space (tmux/tuios prefix); keep only the Japanese-keyboard toggle key
+EnumerateWithTriggerKeys=True
+
+[Hotkey/TriggerKeys]
+0=Zenkaku_Hankaku

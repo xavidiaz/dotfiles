@@ -9,7 +9,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit keepassxc
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
-  mimeapps starship bash omarchy
+  mimeapps starship bash omarchy tuios fcitx5
 )
 
 if ! command -v stow >/dev/null; then

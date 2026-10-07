@@ -7,7 +7,8 @@ Each top-level directory is a Stow "package" that mirrors its target location un
 
 App configs (`~/.config/<name>`): `hypr`, `alacritty`, `foot`, `ghostty`, `kitty`, `nvim`, `tmux`, `btop`,
 `lazygit`, `keepassxc`, `herdr`, `hyprmoncfg`, `mise`, `wally`, `voxtype`, `xournalpp`, `autostart`,
-`git` (global git config), `mimeapps`, `starship`.
+`git` (global git config), `mimeapps`, `starship`, `tuios` (leader Ctrl+Space),
+`fcitx5` (input-method toggle moved off Ctrl+Space so it doesn't steal the tuios/tmux prefix).
 
 Home-root files: `bash` (`.bashrc`, `.bash_profile`).
 
