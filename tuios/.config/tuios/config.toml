@@ -647,3 +647,6 @@ addr = "cs-demo"
 
 [hosts.cs-lms-lexicon]
 addr = "cs-lms-lexicon"
+
+[hosts.cs-lms-work]
+addr = "cs-lms-work"
