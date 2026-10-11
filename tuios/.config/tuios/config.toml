@@ -584,7 +584,7 @@ respond_from_shell = false
 resume_agents = 'ask'
 persist_scrollback_lines = 0
 persist_scrollback_kb = 0
-window_size = 'smallest'
+window_size = 'latest'  # session follows the client you last typed in (iMac vs MacBook)
 
 [startup]
 open_default_window = false
