@@ -44,4 +44,17 @@ for rel in $conflicts; do
 done
 
 stow -v -t "$HOME" "${packages[@]}"
+
+# Omarchy shell plugins aren't stowed (the plugins/ dir is a git-clone
+# cache), so add any listed in omarchy-plugins.txt that this machine lacks.
+if command -v omarchy >/dev/null; then
+  plugin_dir="$HOME/.config/omarchy/plugins"
+  while read -r id url; do
+    case "$id" in "" | \#*) continue ;; esac
+    [ -d "$plugin_dir/$id" ] && continue
+    echo "Adding Omarchy plugin $id"
+    omarchy plugin add "$url" --yes || echo "Failed to add plugin $id from $url" >&2
+  done <omarchy-plugins.txt
+fi
+
 echo "Done. Remember: gh auth login, and see README.md for _system-reference/ (keyd)."

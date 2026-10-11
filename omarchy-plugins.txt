@@ -1,0 +1,22 @@
+# Omarchy shell plugins to install on every machine: <plugin-id> <git-url>.
+# install.sh adds any that are missing; enable/placement lives in
+# omarchy/.config/omarchy/shell.json. Update them with: omarchy plugin update
+bobbynicholas.omaland https://github.com/bobby-nicholas/omaland.git
+crmne.hyprmoncfg https://github.com/crmne/omarchy-hyprmoncfg.git
+expose.window-overview https://github.com/kristofferR/omarchy-expose.git
+furmware.cloud https://github.com/JoshuaFurman/omarchy-cloud-plugin.git
+harshith.system-monitor https://github.com/Harshith292002/omarchy-system-monitor.git
+hass https://github.com/konradk/hass.git
+im0001gt.screens https://github.com/IM0001GT/omarchy-screens.git
+io.github.ilyazar.keyboard-layout https://github.com/omarchy-QOL/omarchy-keyboard-layout.git
+io.github.ilyazar.syncthing https://github.com/omarchy-QOL/syncshell.git
+io.github.kristoferlund.webcam https://github.com/kristoferlund/omarchy-webcam.git
+io.github.thetrueferret.decent-workspaces https://github.com/TheTrueFerret/omarchy-decent-workspaces.git
+io.github.twiking.omasettings https://github.com/twiking/omasettings.git
+mehiel.darky https://github.com/mehiel/mehiel.darky.git
+meviusisback.keybinds https://github.com/meviusisback/keybinds-plugin.git
+omaplug https://github.com/fross100/omaplug.git
+omarkey https://github.com/xavidiaz/omarkey.git
+pnkm0nk.omodoro https://github.com/Pnkm0nK/Omodoro.git
+ssupt.audio-control https://github.com/ssupt/omarchy-audio-control.git
+wian47.removable-drives https://github.com/Wian47/omarchy-removable-drives.git
