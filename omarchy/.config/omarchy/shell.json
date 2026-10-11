@@ -82,7 +82,8 @@
   },
   "plugins": [
     {
-      "id": "expose.window-overview"
+      "id": "expose.window-overview",
+      "hotCornerEnabled": false
     }
   ]
 }

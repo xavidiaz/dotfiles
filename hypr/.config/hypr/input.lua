@@ -25,3 +25,20 @@ hl.device({
     kb_variant = "fixed",
 })
 
+
+-- Three-finger swipe up toggles Exposé (its hot corner is disabled).
+hl.gesture({
+    fingers = 3,
+    direction = "up",
+    action = function() hl.dispatch(hl.dsp.event("expose.window-overview:toggle")) end,
+})
+
+-- Three-finger swipe left/right switches workspaces. The Exposé helper pauses
+-- the swipe while the overview is open so the desktop behind it doesn't move.
+local expose_gesture_path = os.getenv("HOME") .. "/.config/omarchy/plugins/expose.window-overview/workspace-gesture.lua"
+local expose_gesture_loader = loadfile(expose_gesture_path)
+if expose_gesture_loader then
+  expose_gesture_loader()({ fingers = 3 })
+else
+  hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
+end
