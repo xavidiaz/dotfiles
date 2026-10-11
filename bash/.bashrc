@@ -15,3 +15,9 @@ source "$OMARCHY_PATH/default/bash/rc"
 
 # Vim keybindings for the command line
 set -o vi
+
+# Keep coloured log levels (info/warn/fail) from .NET apps when their output is piped, e.g. under `dotnet watch`
+export DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION=1
+
+# Highlight URLs in piped output: dotnet watch --project LMS.API 2>&1 | hlurl
+hlurl() { sed -u -E $'s#https?://[^][:space:]"\'<>)]+#\e[1;4;34m&\e[0m#g'; }
