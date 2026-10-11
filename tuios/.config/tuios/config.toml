@@ -641,3 +641,9 @@ corner = 'bottom-right'
 
 [dock]
 [dock.clock]
+
+[hosts.cs-demo]
+addr = "cs-demo"
+
+[hosts.cs-lms-lexicon]
+addr = "cs-lms-lexicon"
