@@ -12,6 +12,11 @@ packages=(
   mimeapps starship bash omarchy tuios fcitx5 codespaces
 )
 
+# Real directory, so stow links only the file inside it: if stow linked the
+# whole folder, ~/.ssh/config.d/codespaces-host (private, holds the CodeSpaces
+# host address) would be written into this public repo.
+mkdir -p "$HOME/.ssh/config.d" && chmod 700 "$HOME/.ssh"
+
 if ! command -v stow >/dev/null; then
   echo "GNU Stow not found. Install it first, e.g.: sudo pacman -S stow" >&2
   exit 1

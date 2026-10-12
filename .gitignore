@@ -19,3 +19,7 @@ btop/.config/btop/themes/current.theme
 # whichever profile matches the connected displays) - not portable, must
 # not be tracked. Only the profiles/ directory is portable dotfile data.
 hypr/.config/hypr/hyprmoncfg-monitors.lua
+
+# Per-machine CodeSpaces address (tailnet IP) - private, never commit.
+# ~/.ssh/config.d/codespaces-host lands here if stow folded ~/.ssh/config.d.
+codespaces/.ssh/config.d/codespaces-host
