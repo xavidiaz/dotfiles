@@ -126,6 +126,7 @@ scroll_lines = 3
 kitty_placeholders = 'auto'
 auto_enter_terminal_on_focus = 'off'
 click_to_type = 'double'
+focus_follows_mouse = true  # like Hyprland: the pane under the mouse gets focus
 dockbar_position = 'top'
 preferred_shell = ''
 motion = 'full'
