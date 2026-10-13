@@ -21,6 +21,7 @@ Plugins are instead listed in `omarchy-plugins.txt` (`<id> <git-url>`); `install
 `shell.json` references.
 
 Not included:
+
 - `gh` (GitHub CLI config) — just run `gh auth login` on the new machine instead.
 - Browser profiles (Brave/Chrome/Edge/Chromium) — not dotfiles, don't belong in git.
 
@@ -31,7 +32,8 @@ Stow only manages `$HOME`. Currently:
 
 - `etc/keyd/default.conf` — keyd config for Touch Bar Fn-key handling (see
   `~/omarchy-macbook-fixes/02-touchbar.md` for context). Apply manually on a new machine:
-  ```
+
+  ```bash
   sudo cp _system-reference/etc/keyd/default.conf /etc/keyd/default.conf
   sudo systemctl restart keyd
   ```
