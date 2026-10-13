@@ -1,0 +1,149 @@
+#!/bin/bash
+
+# Light themes ship colours tuned for looks, not for text: yellow, green, cyan
+# and the dim grey land around 2:1 against the background, and some (White) are
+# greys only. After every theme change, darken whatever falls short of 4.5:1,
+# keeping the hue, and re-render the terminal-side configs (kitty and the other
+# terminals, Neovim, btop, Helix, Claude Code, ...) from the corrected palette,
+# so any light theme picked in Darky stays readable. The desktop keeps the
+# theme's own colours, and dark themes are left alone.
+
+CURRENT_PATH="$HOME/.local/state/omarchy/current"
+THEME_PATH="$CURRENT_PATH/theme"
+NEXT_THEME_PATH="$CURRENT_PATH/next-theme"
+TERMINAL_COLORS="$THEME_PATH/colors.terminal.toml"
+THEME_SET_LOCK="${XDG_RUNTIME_DIR:-/tmp}/omarchy-theme-set.lock"
+
+# Generated files read by something that draws in a terminal.
+TERMINAL_FILES=(
+  alacritty.toml foot.ini ghostty.conf kitty.conf
+  neovim.lua btop.theme helix.toml
+  claude.json pi.json hermes.yaml t3code.json
+)
+
+[[ -f $THEME_PATH/colors.toml ]] || exit 0
+
+corrected_colors() {
+  python3 - "$THEME_PATH/colors.toml" <<'PY'
+import colorsys, re, sys, tomllib
+
+MIN_CONTRAST = 4.5
+NAMES = ["red", "green", "yellow", "blue", "magenta", "cyan"]
+# Used when a theme's six colours are all greys, so diffs, prompts and syntax
+# still carry meaning.
+FALLBACK = {
+    "red": "#cf222e", "green": "#116329", "yellow": "#9a6700",
+    "blue": "#0969da", "magenta": "#8250df", "cyan": "#1b7c83",
+}
+HEX = re.compile(r"#[0-9a-fA-F]{6}")
+
+def rgb(value):
+    value = value.lstrip("#")
+    return [int(value[i:i + 2], 16) / 255 for i in (0, 2, 4)]
+
+def luminance(color):
+    linear = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in color]
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+def contrast(a, b):
+    high, low = sorted((luminance(a), luminance(b)), reverse=True)
+    return (high + 0.05) / (low + 0.05)
+
+def readable(value, background):
+    color = rgb(value)
+    while contrast(color, background) < MIN_CONTRAST and max(color) > 0.01:
+        color = [c * 0.97 for c in color]
+    return "#" + "".join(f"{round(c * 255):02x}" for c in color)
+
+source = open(sys.argv[1], encoding="utf-8").read()
+colors = tomllib.loads(source)
+if colors.get("mode") != "light" or not HEX.fullmatch(str(colors.get("background", ""))):
+    sys.exit(1)
+
+background = rgb(colors["background"])
+palette = {name: colors[name] for name in NAMES if HEX.fullmatch(str(colors.get(name, "")))}
+if len(palette) == len(NAMES) and all(colorsys.rgb_to_hls(*rgb(v))[2] < 0.1 for v in palette.values()):
+    colors.update(FALLBACK)
+    colors.update({f"bright_{name}": value for name, value in FALLBACK.items()})
+
+fixed = {}
+for key in ["muted", "accent", *NAMES, *(f"bright_{name}" for name in NAMES)]:
+    value = str(colors.get(key, ""))
+    if HEX.fullmatch(value):
+        fixed[key] = readable(value, background)
+
+for key, value in fixed.items():
+    line = f'{key} = "{value}"'
+    source, count = re.subn(rf"(?m)^{key}\s*=.*$", line, source)
+    if not count:
+        source += f"\n{line}\n"
+print(source, end="")
+PY
+}
+
+shipped_by_theme() {
+  local theme_name
+  theme_name=$(<"$CURRENT_PATH/theme.name")
+
+  [[ -e $HOME/.config/omarchy/themes/$theme_name/$1 || -e ${OMARCHY_PATH:-/usr/share/omarchy}/themes/$theme_name/$1 ]]
+}
+
+# Render in omarchy-theme-set's own staging directory, under its lock, so a
+# theme change that arrives meanwhile waits instead of colliding.
+render_terminal_files() {
+  local file
+
+  flock 9
+  rm -rf "$NEXT_THEME_PATH"
+  mkdir -p "$NEXT_THEME_PATH"
+
+  if corrected_colors >"$NEXT_THEME_PATH/colors.toml"; then
+    omarchy-theme-set-templates
+
+    # First, so it is there when Neovim reloads on the neovim.lua below
+    cp "$NEXT_THEME_PATH/colors.toml" "$TERMINAL_COLORS"
+
+    for file in "${TERMINAL_FILES[@]}"; do
+      # A file the theme brings itself (a real Neovim colorscheme, say) is
+      # the author's choice, not a rendering of colors.toml.
+      shipped_by_theme "$file" && continue
+      [[ -f $NEXT_THEME_PATH/$file ]] && cp "$NEXT_THEME_PATH/$file" "$THEME_PATH/$file"
+    done
+  fi
+
+  rm -rf "$NEXT_THEME_PATH"
+}
+
+# tmux panes and running foot windows were just handed the theme's own palette
+# over OSC, which wins over the terminal config; hand them the corrected one.
+send_terminal_palette() {
+  local osc tty pid child
+
+  osc=$(omarchy-theme-osc "$TERMINAL_COLORS")
+  [[ -n $osc ]] || return 0
+
+  {
+    tmux list-panes -a -F "#{pane_tty}" 2>/dev/null
+    for pid in $(pgrep -x foot); do
+      for child in $(pgrep -P "$pid"); do
+        readlink "/proc/$child/fd/1" 2>/dev/null
+      done
+    done
+  } | sort -u | while IFS= read -r tty; do
+    [[ $tty == /dev/pts/* ]] && printf '%b' "$osc" >"$tty" 2>/dev/null
+  done
+}
+
+render_terminal_files 9>"$THEME_SET_LOCK"
+
+[[ -f $TERMINAL_COLORS ]] || exit 0
+
+# Neovim reloads on its own when neovim.lua changes.
+for command in omarchy-restart-terminal omarchy-restart-btop omarchy-restart-helix omarchy-restart-opencode \
+  omarchy-theme-set-pi omarchy-theme-set-claude omarchy-theme-set-hermes omarchy-theme-set-t3code; do
+  $command >/dev/null 2>&1
+done
+
+send_terminal_palette
+
+exit 0
