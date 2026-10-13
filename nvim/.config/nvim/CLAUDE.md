@@ -59,3 +59,10 @@ Format-on-save is global (`vim.g.autoformat = true` in `options.lua`).
 ### `lua/config/remote_clipboard.lua`
 
 Sets `vim.g.clipboard` only when running under tmux, SSH, or `herdr` (detected via env vars and walking `/proc/<pid>/status` ancestors). Yanks are broadcast via OSC 52 (and `wl-copy --sensitive` when a Wayland display is present); paste prefers the local Wayland clipboard, falling back to an OSC 52 query. `vim.g.omarchy_remote_clipboard_osc52 = false` disables the OSC 52 emission. Called explicitly from `options.lua`.
+
+### Markdown
+
+- `lua/plugins/markdown.lua` tunes LazyVim's `lang.markdown` extra: markdownlint-cli2 (lint and format) is pointed at `.markdownlint-cli2.yaml` in this directory, which turns off MD013 line length; the inline text of its diagnostics is shortened to rule and summary and the full message is shown wrapped under the line the cursor is on; and render-markdown renders in every mode with only the cursor line left raw.
+- `lua/config/markdown_copy.lua` draws a copy icon at the right end of each fenced code block's opening fence line and maps `<LeftMouse>` buffer-locally to copy the block when that corner is clicked. It relies on `code.border = "thick"` in `markdown.lua`; with render-markdown's default (`hide`) the fence line, and the icon, are concealed. Padding lives in its `layout` table, which `markdown.lua` passes to render-markdown. It also measures each buffer's text width (longest line, capped at the window) and writes that as `min_width` into render-markdown's per-buffer config (`render-markdown.state`, an internal API) so code blocks and H1/H2 banners end where the prose does.
+- `lua/config/markdown_headings.lua` gives each heading level its own colour, read from the Omarchy theme's `colors.toml` (or `colors.terminal.toml`, the contrast-corrected palette the dotfiles' `terminal-contrast` theme-set hook writes for light themes) and reapplied on `ColorScheme`.
+- `autocmds.lua` turns spell check off for Markdown and loads `markdown_copy` and `markdown_headings`.

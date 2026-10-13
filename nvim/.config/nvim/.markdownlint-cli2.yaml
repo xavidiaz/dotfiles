@@ -1,0 +1,5 @@
+# Base rules for markdownlint-cli2 when run from Neovim (see lua/plugins/markdown.lua).
+# A project's own .markdownlint* files still apply on top.
+config:
+  # Line length: prose is soft-wrapped by the editor, not hard-wrapped at 80.
+  MD013: false
