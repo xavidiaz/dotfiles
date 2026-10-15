@@ -108,23 +108,39 @@ return {
   { "nvim-neotest/neotest", optional = true, enabled = false },
   { "Nsidorenco/neotest-vstest", optional = true, enabled = false },
 
-  -- Format C# with csharpier (Mason-installed, v1.x). The LazyVim extra
-  -- already maps `cs -> csharpier`; this is just here to be explicit.
-  -- Razor is deliberately left out: csharpier doesn't format .cshtml/.razor
-  -- over stdin. With no conform formatter, LazyVim falls back to LSP
-  -- formatting, and Roslyn formats Razor itself (markup and `@` blocks; C#
-  -- inside `@code {}` only lightly) — as long as the `html` client is
-  -- attached, since Roslyn abandons the whole format if the HTML part comes
-  -- back empty. Linting needs no separate config either: Roslyn's compiler +
-  -- analyzer diagnostics apply to `razor` buffers the same as `cs` once the
-  -- LSP client above is attached.
+  -- Format C# like Visual Studio's defaults (the team rule: no .editorconfig,
+  -- "use Visual Studio defaults"). VS formats with Roslyn, which only fixes
+  -- whitespace and braces and never wraps or joins lines. The LazyVim dotnet
+  -- extra maps `cs -> csharpier`, which is opinionated (wraps at 100 columns,
+  -- explodes initializers and call chains) and rewrites lines nobody touched,
+  -- so drop it: with no conform formatter, LazyVim falls back to LSP
+  -- formatting (`lsp_format = "fallback"`), i.e. the Roslyn server attached
+  -- above, the same engine as Visual Studio's Format Document. csharpier
+  -- stays installed for running it by hand.
+  -- Razor formats the same way (csharpier can't do .cshtml/.razor anyway):
+  -- Roslyn formats markup and `@` blocks (C# inside `@code {}` only lightly)
+  -- as long as the `html` client is attached, since Roslyn abandons the whole
+  -- format if the HTML part comes back empty. Linting needs no separate config:
+  -- Roslyn's compiler + analyzer diagnostics apply to `razor` buffers too.
   {
     "stevearc/conform.nvim",
     optional = true,
-    opts = {
-      formatters_by_ft = {
-        cs = { "csharpier" },
-      },
-    },
+    opts = function(_, opts)
+      opts.formatters_by_ft = opts.formatters_by_ft or {}
+      opts.formatters_by_ft.cs = nil
+    end,
+    -- Roslyn takes the indent size from the editor (LSP `tabSize`), and
+    -- LazyVim defaults to 2; Visual Studio uses 4 spaces for C# and Razor.
+    init = function()
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = { "cs", "razor" },
+        callback = function(ev)
+          vim.bo[ev.buf].expandtab = true
+          vim.bo[ev.buf].shiftwidth = 4
+          vim.bo[ev.buf].tabstop = 4
+          vim.bo[ev.buf].softtabstop = 4
+        end,
+      })
+    end,
   },
 }
