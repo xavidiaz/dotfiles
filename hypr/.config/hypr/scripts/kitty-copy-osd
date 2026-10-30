@@ -1,0 +1,11 @@
+#!/bin/bash
+# Flash an OSD with a preview whenever text is copied while kitty is focused (kitty has no copy hook).
+
+exec wl-paste --type text --watch bash -c '
+  text=$(head -c 4096)
+  [[ $(hyprctl activewindow -j | jq -r .class) == kitty ]] || exit 0
+  # One line, squeezed whitespace, capped at 40 characters.
+  preview=$(tr -s "[:space:]" " " <<<"$text" | sed "s/^ //; s/ $//")
+  ((${#preview} > 40)) && preview="${preview:0:39}…"
+  omarchy osd -i "󰆏" -m "${preview:-Copied}" -d 1200
+'
