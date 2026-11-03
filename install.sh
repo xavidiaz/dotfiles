@@ -9,7 +9,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit keepassxc
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
-  mimeapps starship bash omarchy tuios fcitx5 codespaces
+  mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow
 )
 
 # Real directory, so stow links only the file inside it: if stow linked the
@@ -20,6 +20,14 @@ mkdir -p "$HOME/.ssh/config.d" && chmod 700 "$HOME/.ssh"
 if ! command -v stow >/dev/null; then
   echo "GNU Stow not found. Install it first, e.g.: sudo pacman -S stow" >&2
   exit 1
+fi
+
+# Packages the configs rely on: glow renders Markdown for the bat wrapper in
+# ~/.bashrc, and ble.sh (AUR) gives bash its Vim editing and the prompt's mode chip.
+# ~/.bashrc falls back to plain readline when ble.sh is missing (e.g. a Codespace).
+if command -v omarchy >/dev/null; then
+  omarchy pkg add glow || echo "Failed to install glow" >&2
+  omarchy pkg aur add blesh-git || echo "Failed to install blesh-git from the AUR" >&2
 fi
 
 # Pre-flight: extract conflicting target paths from stow's dry-run output.

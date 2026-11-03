@@ -1,0 +1,13 @@
+# Colours come from BAT_THEME=ansi (set by Omarchy), so they follow the theme.
+# Plain `bat FILE` in a terminal goes through the wrapper in ~/.bashrc first.
+
+# Line numbers, git changes and the file name, without the grid lines
+--style=numbers,changes,header-filename
+--italic-text=always
+
+# Files bat doesn't recognise on its own
+--map-syntax=*.jsonc:JSON
+--map-syntax=".bash_*:Bourne Again Shell (bash)"
+--map-syntax=*.conf:INI
+--map-syntax=".profile:Bourne Again Shell (bash)"
+--map-syntax=mimeapps.list:INI

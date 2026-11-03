@@ -37,3 +37,5 @@
 	helper = !/home/xavidiaz/.local/share/mise/installs/gh/2.100.0/gh_2.100.0_linux_amd64/bin/gh auth git-credential
 [rebase]
 	autoStash = true
+[core]
+	untrackedCache = true

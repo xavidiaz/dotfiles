@@ -1,24 +1,29 @@
-# Powerlevel10k "rainbow"-style prompt: one slanted chip per segment, in the
-# theme's ANSI colours so it follows the Omarchy theme. The second line is left
-# for the INSERT/NORMAL chip, which readline draws (see ~/.bashrc). Starship
-# trims a trailing line break, so the space after it keeps the second line.
-add_newline = true
+# Powerlevel10k "rainbow"-style prompt: slanted chips that touch, in fixed colours
+# that read on both light and dark themes (some themes, e.g. Lupine, make every
+# ANSI colour a shade of blue).
+add_newline = false
 command_timeout = 200
-format = "$directory$git_branch$git_status$cmd_duration$status$line_break "
+# Chips on the first line, the input on the second after the vi mode chip (drawn by
+# ble.sh or readline). Starship trims a trailing line break, so the space after it
+# keeps the second line. Languages show only inside projects that use them.
+format = "$directory$git_branch$git_status$dotnet$nodejs$python$rust$cmd_duration$status$line_break "
+# Right side, drawn by ble.sh (plain readline bash has no right prompt)
+right_format = "$hostname$time"
 
 [directory]
 truncation_length = 2
 truncation_symbol = "…/"
 read_only = " 󰌾"
-repo_root_style = "bg:blue fg:black bold"
-format = "[](fg:blue)[ $path$read_only ](bg:blue fg:black)[](fg:blue) "
-repo_root_format = "[](fg:blue)[ $repo_root]($repo_root_style)[$path$read_only ](bg:blue fg:black)[](fg:blue) "
+repo_root_style = "bg:#14b8a6 fg:black bold"
+format = "[](fg:#14b8a6)[ $path$read_only ](bg:#14b8a6 fg:black)[](fg:#14b8a6)"
+repo_root_format = "[](fg:#14b8a6)[ $repo_root]($repo_root_style)[$path$read_only ](bg:#14b8a6 fg:black)[](fg:#14b8a6)"
 
 [git_branch]
-format = "[](fg:green)[  $branch ](bg:green fg:black)[](fg:green) "
+format = "[](fg:#a855f7)[  $branch ](bg:#a855f7 fg:white)[](fg:#a855f7)"
 
 [git_status]
-format = '([](fg:yellow)[ $all_status$ahead_behind](bg:yellow fg:black)[](fg:yellow) )'
+ignore_submodules = true
+format = '([](fg:#f59e0b)[ $all_status$ahead_behind](bg:#f59e0b fg:black)[](fg:#f59e0b))'
 ahead      = "⇡${count} "
 diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
 behind     = "⇣${count} "
@@ -32,8 +37,33 @@ deleted    = ""
 
 [cmd_duration]
 min_time = 2000
-format = "[](fg:purple)[  $duration ](bg:purple fg:black)[](fg:purple) "
+format = "[](fg:#ec4899)[  $duration ](bg:#ec4899 fg:white)[](fg:#ec4899)"
 
 [status]
 disabled = false
-format = "[](fg:red)[ ✘ $status ](bg:red fg:black)[](fg:red) "
+format = "[](fg:#ef4444)[ ✘ $status ](bg:#ef4444 fg:white)[](fg:#ef4444)"
+
+[dotnet]
+symbol = "󰪮 "
+heuristic = true
+format = "[](fg:#06b6d4)[ $symbol$version ](bg:#06b6d4 fg:black)[](fg:#06b6d4)"
+
+[nodejs]
+symbol = " "
+format = "[](fg:#06b6d4)[ $symbol$version ](bg:#06b6d4 fg:black)[](fg:#06b6d4)"
+
+[python]
+symbol = " "
+format = "[](fg:#06b6d4)[ $symbol$version( \\($virtualenv\\)) ](bg:#06b6d4 fg:black)[](fg:#06b6d4)"
+
+[rust]
+symbol = "󱘗 "
+format = "[](fg:#06b6d4)[ $symbol$version ](bg:#06b6d4 fg:black)[](fg:#06b6d4)"
+
+[hostname]
+ssh_only = true
+format = "[](fg:#0ea5e9)[ 󰒋 $hostname ](bg:#0ea5e9 fg:black)[](fg:#0ea5e9)"
+
+[time]
+disabled = false
+format = "[](fg:#64748b)[ 󰥔 $time ](bg:#64748b fg:white)[](fg:#64748b)"
