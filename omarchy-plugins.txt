@@ -1,5 +1,5 @@
 # Omarchy shell plugins to install on every machine: <plugin-id> <git-url>.
-# install.sh adds any that are missing; enable/placement lives in
+# install.sh adds any that are missing and updates the rest; enable/placement lives in
 # omarchy/.config/omarchy/shell.json. Update them with: omarchy plugin update
 bobbynicholas.omaland https://github.com/bobby-nicholas/omaland.git
 crmne.hyprmoncfg https://github.com/crmne/omarchy-hyprmoncfg.git

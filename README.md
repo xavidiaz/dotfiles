@@ -17,8 +17,8 @@ Partial package: `omarchy` — only the small user-facing files (`branding`, `de
 `shell.json`, `omasettings.json`, `light-dark.conf`). The `plugins/` cache, `themes/`, `themed/`,
 and `extensions/` are left as local, machine-generated state and are NOT tracked here.
 Plugins are instead listed in `omarchy-plugins.txt` (`<id> <git-url>`); `install.sh` runs
-`omarchy plugin add` for any that are missing, so every machine gets the same plugins that
-`shell.json` references.
+`omarchy plugin add` for any that are missing and `omarchy plugin update` for the rest, so every
+machine gets the same, current plugins that `shell.json` references.
 
 Not included:
 
