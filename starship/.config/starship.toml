@@ -1,32 +1,39 @@
+# Powerlevel10k "rainbow"-style prompt: one slanted chip per segment, in the
+# theme's ANSI colours so it follows the Omarchy theme. The second line is left
+# for the INSERT/NORMAL chip, which readline draws (see ~/.bashrc). Starship
+# trims a trailing line break, so the space after it keeps the second line.
 add_newline = true
 command_timeout = 200
-format = "[$directory$git_branch$git_status]($style)$character"
-
-[character]
-error_symbol = "[✗](bold cyan)"
-success_symbol = "[❯](bold cyan)"
+format = "$directory$git_branch$git_status$cmd_duration$status$line_break "
 
 [directory]
 truncation_length = 2
 truncation_symbol = "…/"
-repo_root_style = "bold cyan"
-repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+read_only = " 󰌾"
+repo_root_style = "bg:blue fg:black bold"
+format = "[](fg:blue)[ $path$read_only ](bg:blue fg:black)[](fg:blue) "
+repo_root_format = "[](fg:blue)[ $repo_root]($repo_root_style)[$path$read_only ](bg:blue fg:black)[](fg:blue) "
 
 [git_branch]
-format = "[$branch]($style) "
-style = "italic cyan"
+format = "[](fg:green)[  $branch ](bg:green fg:black)[](fg:green) "
 
 [git_status]
-format     = '[$all_status]($style)'
-style      = "cyan"
+format = '([](fg:yellow)[ $all_status$ahead_behind](bg:yellow fg:black)[](fg:yellow) )'
 ahead      = "⇡${count} "
 diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
 behind     = "⇣${count} "
-conflicted = " "
-up_to_date = " "
+conflicted = " "
 untracked  = "? "
-modified   = " "
+modified   = " "
 stashed    = ""
-staged     = ""
+staged     = "+ "
 renamed    = ""
 deleted    = ""
+
+[cmd_duration]
+min_time = 2000
+format = "[](fg:purple)[  $duration ](bg:purple fg:black)[](fg:purple) "
+
+[status]
+disabled = false
+format = "[](fg:red)[ ✘ $status ](bg:red fg:black)[](fg:red) "
