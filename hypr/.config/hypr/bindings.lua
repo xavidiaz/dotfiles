@@ -46,3 +46,9 @@ o.bind("ALT + 8", "Bracket left [", send_mod5_key_once("MOD5", "8"))
 o.bind("ALT + 9", "Bracket right ]", send_mod5_key_once("MOD5", "9"))
 o.bind("ALT + SHIFT + 8", "Brace left {", send_mod5_key_once("MOD5 SHIFT", "8"))
 o.bind("ALT + SHIFT + 9", "Brace right }", send_mod5_key_once("MOD5 SHIFT", "9"))
+
+-- tmux and herdr are uninstalled; drop the default bindings that launch them.
+hl.unbind("SUPER + ALT + RETURN")
+hl.unbind("SUPER + CTRL + RETURN")
+hl.unbind("SUPER + ALT + K")
+hl.unbind("SUPER + CTRL + K")
