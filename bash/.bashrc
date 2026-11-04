@@ -205,8 +205,8 @@ __title_precmd() {
     __title_where=${PWD/#$HOME/\~}
   fi
   [[ -n $SSH_CONNECTION ]] && __title_where="${HOSTNAME%%.*}: $__title_where"
-  # In a berth pod: the pod and session (e.g. "ai901:claude"), as in the prompt chip
-  [[ -n $BERTH_SPACE ]] && __title_where="$BERTH_SPACE: $__title_where"
+  # In a berth pod: just the pod and session (e.g. "ai901:claude"), as in the prompt chip
+  [[ -n $BERTH_SPACE ]] && __title_where=$BERTH_SPACE
   printf '\e]2;%s\a' "$__title_where"
 }
 __title_preexec() {
