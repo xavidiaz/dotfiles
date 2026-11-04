@@ -58,6 +58,27 @@ done
 
 stow -v -t "$HOME" "${packages[@]}"
 
+# Neovim plugins at the versions in lazy-lock.json, so kitty.conf's scrollback
+# kitten (kitty-scrollback.nvim) exists before Neovim is ever opened
+if command -v nvim >/dev/null; then
+  nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 || echo "Failed to install Neovim plugins" >&2
+fi
+
+# Darky (the light/dark plugin) replaces symlinks when it saves, so its settings
+# are seeded as a copy instead; hooks/darky.d/sync-dotfiles.hook copies changes
+# back. It writes ~/.config/omarchy/light-dark.conf from them on every switch.
+darky_settings="${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json"
+if [ ! -e "$darky_settings" ]; then
+  mkdir -p "${darky_settings%/*}" && cp _seed/darky/settings.json "$darky_settings"
+fi
+
+# monitors.lua differs per machine, so it isn't tracked, but hyprland.lua
+# requires it: start from Omarchy's default where it's missing
+monitors="$HOME/.config/hypr/monitors.lua"
+if [ ! -e "$monitors" ] && [ -f /usr/share/omarchy/config/hypr/monitors.lua ]; then
+  cp /usr/share/omarchy/config/hypr/monitors.lua "$monitors"
+fi
+
 # Omarchy shell plugins aren't stowed (the plugins/ dir is a git-clone
 # cache), so add any listed in omarchy-plugins.txt that this machine lacks
 # and update the rest. Old clones can predate Omarchy's plugin API changes

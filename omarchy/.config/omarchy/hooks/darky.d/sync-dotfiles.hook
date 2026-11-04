@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Darky saves its settings and light-dark.conf by writing a new file and renaming
+# it over the old one, which replaces a stow symlink, so neither can live in the
+# dotfiles as a link. After every Darky change, copy the settings back to the
+# seed that install.sh puts in place on a new machine. The location is left out:
+# the repo is public, and Darky asks for it again for the sunrise/sunset schedule.
+
+settings="${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json"
+dotfiles=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../../.." && pwd)
+seed="$dotfiles/_seed/darky/settings.json"
+
+[[ -f $settings && -d ${seed%/*} ]] || exit 0
+jq 'del(.location)' "$settings" >"$seed.new" && mv -f "$seed.new" "$seed"

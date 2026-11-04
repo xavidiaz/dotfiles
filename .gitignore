@@ -20,6 +20,10 @@ btop/.config/btop/themes/current.theme
 # not be tracked. Only the profiles/ directory is portable dotfile data.
 hypr/.config/hypr/hyprmoncfg-monitors.lua
 
+# Per-machine monitor layout (this machine's file lives only in ~/.config/hypr;
+# install.sh creates it from Omarchy's default where missing).
+hypr/.config/hypr/monitors.lua
+
 # Per-machine CodeSpaces address (tailnet IP) - private, never commit.
 # ~/.ssh/config.d/codespaces-host lands here if stow folded ~/.ssh/config.d.
 codespaces/.ssh/config.d/codespaces-host

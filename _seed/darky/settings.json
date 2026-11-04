@@ -1,0 +1,14 @@
+{
+  "mode": "auto",
+  "schedule": "solar",
+  "dayStart": "07:00",
+  "nightStart": "19:00",
+  "light": {
+    "theme": "lupine",
+    "background": ""
+  },
+  "dark": {
+    "theme": "tokyo-night",
+    "background": ""
+  }
+}

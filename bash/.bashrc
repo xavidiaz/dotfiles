@@ -76,8 +76,9 @@ if [[ ${BLE_VERSION-} ]]; then
     [[ ! $reg || $reg == 34 || $reg == 43 ]] || return 0
     printf '%s' "$content" | wl-copy 2>/dev/null
   }
+  # Before p/P: the register typed before them ("+p) is still pending here
   __clip_paste() {
-    local reg=${ADVICE_WORDS[1]} clip
+    local reg=$_ble_keymap_vi_reg clip
     [[ ! $reg || $reg == 34 || $reg == 43 ]] || return 0
     clip=$(wl-paste --no-newline 2>/dev/null) || return 0
     # Keep the kill ring (and so linewise yy/dd) when the clipboard still holds it
@@ -104,7 +105,10 @@ if [[ ${BLE_VERSION-} ]]; then
 
     if [[ $WAYLAND_DISPLAY ]] && command -v wl-copy >/dev/null; then
       ble/function#advice after ble/keymap:vi/register#set __clip_copy
-      ble/function#advice before ble/keymap:vi/register#load __clip_paste
+      local widget
+      for widget in vi_nmap/paste-after vi_nmap/paste-before vi_xmap/paste-after vi_xmap/paste-before; do
+        ble/function#advice before "ble/widget/$widget" __clip_paste
+      done
     fi
 
     # Leader keys in NORMAL mode: Space then ff, sg, gg, e, : or v (edit the line
@@ -155,6 +159,16 @@ export DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION=1
 
 # Highlight URLs in piped output: dotnet watch --project LMS.API 2>&1 | hlurl
 hlurl() { sed -u -E $'s#https?://[^][:space:]"\'<>)]+#\e[1;4;34m&\e[0m#g'; }
+
+# Tell kitty when tuios runs, so Ctrl+Space reaches tuios as its leader instead of
+# opening the scrollback (see kitty.conf)
+tuios() {
+  printf '\e]1337;SetUserVar=in_tuios=MQ==\a'
+  command tuios "$@"
+  local status=$?
+  printf '\e]1337;SetUserVar=in_tuios\a'
+  return $status
+}
 
 # glow in the terminal's ANSI colours, so Markdown follows the Omarchy theme (its
 # "auto" style turns dark on a light kitty). Passed as a flag because glow expands
