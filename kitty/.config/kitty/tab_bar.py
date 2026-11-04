@@ -4,8 +4,10 @@
 # pod tell apart.
 import re
 
-# Theme palette (Omarchy sets color0-15); no blue, it's the active tab's background.
-COLOURS = (1, 2, 3, 5, 6)
+# Fixed colours, not the theme palette: some themes (e.g. the current light one)
+# are all blues and purples, so a palette colour can match the tab background.
+# Light enough for black text, none of them blue.
+COLOURS = ('ffb454', '7fd962', 'ffd866', 'ff7eb6', 'c3a6ff')
 BERTH = re.compile(r'^(.*?)([\w.-]+):([\w.-]+)$')
 
 
@@ -16,5 +18,5 @@ def draw_title(data):
         return title
     head, pod, session = m.groups()
     fmt = data['fmt']
-    colour = getattr(fmt.bg, f'color{COLOURS[sum(map(ord, session)) % len(COLOURS)]}')
+    colour = getattr(fmt.bg, f'_{COLOURS[sum(map(ord, session)) % len(COLOURS)]}')
     return f'{head}{pod}:{colour}{fmt.fg._000000} {session} {fmt.bg.tab}{fmt.fg.tab}'
