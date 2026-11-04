@@ -66,7 +66,7 @@ fi
 
 # Darky (the light/dark plugin) replaces symlinks when it saves, so its settings
 # are seeded as a copy instead; hooks/darky.d/sync-dotfiles.hook copies changes
-# back. It writes ~/.config/omarchy/light-dark.conf from them on every switch.
+# back (and re-links light-dark.conf, which Darky also rewrites).
 darky_settings="${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json"
 if [ ! -e "$darky_settings" ]; then
   mkdir -p "${darky_settings%/*}" && cp _seed/darky/settings.json "$darky_settings"

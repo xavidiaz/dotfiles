@@ -1,14 +1,25 @@
 #!/bin/bash
 
 # Darky saves its settings and light-dark.conf by writing a new file and renaming
-# it over the old one, which replaces a stow symlink, so neither can live in the
-# dotfiles as a link. After every Darky change, copy the settings back to the
-# seed that install.sh puts in place on a new machine. The location is left out:
-# the repo is public, and Darky asks for it again for the sunrise/sunset schedule.
+# it over the old one, which replaces a stow symlink. It runs this hook right
+# after every change, so:
+# - light-dark.conf: move the new contents into the dotfiles and put the
+#   symlink back.
+# - settings.json (Darky reads it all the time, so it stays a plain file): copy it
+#   to the seed that install.sh puts in place on a new machine. The location is
+#   left out, since the repo is public; Darky asks for it again for the
+#   sunrise/sunset schedule.
+
+dotfiles=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../../.." && pwd)
+
+pair="${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/light-dark.conf"
+pair_repo="$dotfiles/omarchy/.config/omarchy/light-dark.conf"
+if [[ -f $pair && ! -L $pair && -d ${pair_repo%/*} ]]; then
+  cat "$pair" >"$pair_repo" && ln -sfn "$(realpath --relative-to="${pair%/*}" "$pair_repo")" "$pair"
+fi
 
 settings="${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json"
-dotfiles=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../../.." && pwd)
 seed="$dotfiles/_seed/darky/settings.json"
-
-[[ -f $settings && -d ${seed%/*} ]] || exit 0
-jq 'del(.location)' "$settings" >"$seed.new" && mv -f "$seed.new" "$seed"
+if [[ -f $settings && -d ${seed%/*} ]]; then
+  jq 'del(.location)' "$settings" >"$seed.new" && mv -f "$seed.new" "$seed"
+fi
