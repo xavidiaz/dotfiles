@@ -79,6 +79,17 @@ if [ ! -e "$monitors" ] && [ -f /usr/share/omarchy/config/hypr/monitors.lua ]; t
   cp /usr/share/omarchy/config/hypr/monitors.lua "$monitors"
 fi
 
+# Vim keys in Brave: a managed policy force-installs Vimium. It lives in /etc,
+# so sudo is only asked for when the policy is missing or out of date.
+if command -v brave >/dev/null; then
+  brave_policy=/etc/brave/policies/managed/vim.json
+  brave_vim='{"ExtensionInstallForcelist":["dbepggeogbaibhgnhhndojpepiihcmeb"]}'
+  if [ "$(cat "$brave_policy" 2>/dev/null)" != "$brave_vim" ]; then
+    sudo mkdir -p "${brave_policy%/*}" && echo "$brave_vim" | sudo tee "$brave_policy" >/dev/null \
+      || echo "Failed to write the Brave Vimium policy" >&2
+  fi
+fi
+
 # Omarchy shell plugins aren't stowed (the plugins/ dir is a git-clone
 # cache), so add any listed in omarchy-plugins.txt that this machine lacks
 # and update the rest. Old clones can predate Omarchy's plugin API changes
