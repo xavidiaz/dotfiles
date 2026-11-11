@@ -1,0 +1,17 @@
+# Chawan (cha). Options: man cha-config.
+# JavaScript and cookies stay off by default; enable them per site below.
+
+[buffer]
+# Follow http-equiv refresh redirects instead of asking (y/n) every time.
+meta-refresh = "always"
+
+[encoding]
+# Fall back to Western European instead of the default Japanese/Central European
+# charsets, so å/ä/ö/ñ on Latin-1 pages (e.g. Google without JS) decode properly.
+document-charset = ["utf-8", "windows-1252"]
+
+# Per-site overrides: match on `host` (or `url`), regexes.
+# scripting = true enables JS; cookie = "save" keeps you logged in across runs.
+[siteconf.hn]
+host = 'news\.ycombinator\.com'
+cookie = "save"
