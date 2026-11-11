@@ -17,6 +17,11 @@ packages=(
 # host address) would be written into this public repo.
 mkdir -p "$HOME/.ssh/config.d" && chmod 700 "$HOME/.ssh"
 
+# Same for the shell plugins folder: it holds git-cloned plugins (see
+# omarchy-plugins.txt) next to the personal ones stowed from omarchy/, and a
+# folded link would clone them into this repo.
+mkdir -p "$HOME/.config/omarchy/plugins"
+
 if ! command -v stow >/dev/null; then
   echo "GNU Stow not found. Install it first, e.g.: sudo pacman -S stow" >&2
   exit 1

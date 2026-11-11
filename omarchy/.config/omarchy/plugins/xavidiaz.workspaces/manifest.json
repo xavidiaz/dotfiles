@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "xavidiaz.workspaces",
+  "name": "Workspaces",
+  "version": "1.0.0",
+  "author": "xavidiaz",
+  "license": "MIT",
+  "description": "Per-monitor workspace indicators with app icons, app names and a hover list of every window. Based on TheTrueFerret's Decent Workspaces.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Workspaces.qml"
+  },
+  "barWidget": {
+    "displayName": "Workspaces (xavidiaz)",
+    "description": "Only the workspaces in use, labelled with what is on them",
+    "category": "Compositor",
+    "allowMultiple": false,
+    "defaultSection": "left"
+  }
+}

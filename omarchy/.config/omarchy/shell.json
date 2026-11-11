@@ -17,7 +17,7 @@
           "id": "io.github.twiking.omasettings"
         },
         {
-          "id": "io.github.thetrueferret.decent-workspaces"
+          "id": "xavidiaz.workspaces"
         },
         {
           "id": "omarchy.agents"
@@ -56,6 +56,9 @@
       "right": [
         {
           "id": "omarchy.tray"
+        },
+        {
+          "id": "bramvanoploo.omarchy-t2-linux"
         },
         {
           "id": "furmware.cloud"
