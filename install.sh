@@ -49,6 +49,13 @@ if command -v omarchy >/dev/null; then
   gsettings set org.gnome.desktop.interface monospace-font-name 'AtkynsonMono Nerd Font 11' 2>/dev/null || true
 fi
 
+# Tailscale, for the bar's omarchy.tailscale widget. Omarchy's installer also
+# logs in (it prints a login link), lets $USER manage it and saves Taildrop
+# files to ~/Downloads, so it only runs where Tailscale is missing.
+if command -v omarchy >/dev/null && ! command -v tailscale >/dev/null; then
+  omarchy install service tailscale || echo "Failed to install Tailscale" >&2
+fi
+
 # KDE Connect: clipboard sync with the phone (Android -> desktop via the
 # notification's "Send clipboard"), and sshfs + kio-fuse for "Browse device".
 # The daemon starts at login from /etc/xdg/autostart. ufw needs its ports

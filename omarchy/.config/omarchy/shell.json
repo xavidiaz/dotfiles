@@ -41,6 +41,9 @@
           "id": "omarchy.weather"
         },
         {
+          "id": "omarchy.monitor"
+        },
+        {
           "id": "io.github.oidium.pocket-extended"
         },
         {
@@ -59,6 +62,9 @@
       "right": [
         {
           "id": "omarchy.tray"
+        },
+        {
+          "id": "omarchy.tailscale"
         },
         {
           "id": "bramvanoploo.omarchy-t2-linux"
@@ -83,9 +89,6 @@
         },
         {
           "id": "crmne.hyprmoncfg"
-        },
-        {
-          "id": "omarchy.monitor"
         }
       ]
     }
@@ -95,5 +98,8 @@
       "id": "expose.window-overview",
       "hotCornerEnabled": false
     }
+  ],
+  "disabledPlugins": [
+    "omarchy.reminders"
   ]
 }
