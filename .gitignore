@@ -24,6 +24,10 @@ hypr/.config/hypr/hyprmoncfg-monitors.lua
 # install.sh creates it from Omarchy's default where missing).
 hypr/.config/hypr/monitors.lua
 
+# KeePassXC writes secrets into its settings (a KeeShare private key), so its
+# config stays per-machine and out of this public repo.
+keepassxc/
+
 # Per-machine CodeSpaces address (tailnet IP) - private, never commit.
 # ~/.ssh/config.d/codespaces-host lands here if stow folded ~/.ssh/config.d.
 codespaces/.ssh/config.d/codespaces-host

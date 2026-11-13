@@ -7,7 +7,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 packages=(
-  hypr alacritty foot ghostty kitty nvim tmux btop lazygit keepassxc
+  hypr alacritty foot ghostty kitty nvim tmux btop lazygit
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
   mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow chawan
   fontconfig
