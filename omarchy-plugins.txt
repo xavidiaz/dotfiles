@@ -12,6 +12,7 @@ im0001gt.screens https://github.com/IM0001GT/omarchy-screens.git
 io.github.ilyazar.keyboard-layout https://github.com/omarchy-QOL/omarchy-keyboard-layout.git
 io.github.ilyazar.syncthing https://github.com/omarchy-QOL/syncshell.git
 io.github.kristoferlund.webcam https://github.com/kristoferlund/omarchy-webcam.git
+io.github.oidium.pocket-extended https://github.com/oidium/omarchy-pocket-extended.git
 io.github.twiking.omasettings https://github.com/twiking/omasettings.git
 mehiel.darky https://github.com/mehiel/mehiel.darky.git
 meviusisback.keybinds https://github.com/meviusisback/keybinds-plugin.git
