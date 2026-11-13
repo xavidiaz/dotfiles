@@ -6,6 +6,7 @@ bramvanoploo.omarchy-t2-linux https://github.com/bramvanoploo/omarchy-t2-linux.g
 crmne.hyprmoncfg https://github.com/crmne/omarchy-hyprmoncfg.git
 expose.window-overview https://github.com/kristofferR/omarchy-expose.git
 furmware.cloud https://github.com/JoshuaFurman/omarchy-cloud-plugin.git
+gexavi.peripheral-battery https://github.com/gexavi/omarchy-peripheral-battery.git
 harshith.system-monitor https://github.com/Harshith292002/omarchy-system-monitor.git
 hass https://github.com/konradk/hass.git
 im0001gt.screens https://github.com/IM0001GT/omarchy-screens.git

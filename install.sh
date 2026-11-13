@@ -164,4 +164,13 @@ if command -v omarchy >/dev/null; then
   omarchy restart shell >/dev/null 2>&1 || true
 fi
 
+# Wireless Peripheral Battery reads batteries through its own sandboxed system
+# service (a root oneshot on a 30s timer, no network, writes only to known
+# Logitech/SteelSeries/HyperX devices). Its install.sh copies the reader into
+# /usr/local/lib, so it is re-run after every plugin update to keep them level.
+battery_service="$HOME/.config/omarchy/plugins/gexavi.peripheral-battery/service/install.sh"
+if [ -x "$battery_service" ] || [ -f "$battery_service" ]; then
+  sudo bash "$battery_service" >/dev/null || echo "Failed to install the peripheral-battery service" >&2
+fi
+
 echo "Done. Remember: gh auth login, and see README.md for _system-reference/ (keyd)."
