@@ -5,6 +5,7 @@ dotnet = "latest"
 gh = "latest"
 node = "26.8.1"
 opencode = "latest"
+uv = "latest"
 
 [settings.upgrade]
 auto_prune = false
