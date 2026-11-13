@@ -112,6 +112,31 @@ var terminalTitles = [
 
 var fallback = "\u{F0614}"
 
+// Icon colours by kind of app, from the Tokyo Night palette; anything not
+// listed keeps the bar's text colour. Orange is left out: it marks the
+// focused window and the active workspace.
+var tintGroups = [
+  { tint: "#bb9af7", names: ["Claude Code", "Claude", "ChatGPT", "AI chat", "OpenCode"] },
+  { tint: "#7dcfff", names: ["Brave", "Firefox", "Edge", "Tor", "Chrome", "GitHub", "YouTube", "Reddit", "Amazon", "Facebook", "X", "Figma", "Jira", "Monkeytype"] },
+  { tint: "#9ece6a", names: ["Terminal", "SSH"] },
+  { tint: "#7aa2f7", names: ["VS Code", "Zed", "Sublime", "JetBrains", "Android Studio", "Neovim", "Lazygit", "Editor", "Obsidian", "Xournal++", "Writer", "Calc", "LibreOffice", "PDF"] },
+  { tint: "#e0af68", names: ["Signal", "Telegram", "Discord", "Slack", "Mail", "WhatsApp", "Zoom"] },
+  { tint: "#f7768e", names: ["Video", "VLC", "Spotify", "Jellyfin", "Music", "OBS", "GIMP", "Image", "Steam"] },
+  { tint: "#73daca", names: ["Files", "Audio", "VM", "Remote", "Torrent", "GParted", "Slicer", "Appearance", "Auth", "KeePassXC", "Monitor", "Yazi"] }
+]
+
+var tintByName = null
+
+function tintFor(name) {
+  if (!tintByName) {
+    tintByName = {}
+    for (var i = 0; i < tintGroups.length; i++)
+      for (var j = 0; j < tintGroups[i].names.length; j++)
+        tintByName[tintGroups[i].names[j]] = tintGroups[i].tint
+  }
+  return tintByName[name] || ""
+}
+
 // Rules are compiled once per QML engine rather than per render. `.pragma
 // library` means one shared copy across every bar instance.
 function compile(list) {
@@ -147,7 +172,8 @@ var cache = {}
 var cacheCount = 0
 var cacheLimit = 500
 
-// Returns { icon, name } for a window.
+// Returns { icon, name, tint } for a window, plus `terminal: true` for
+// terminals. `tint` is "" when the icon keeps the bar's text colour.
 function resolve(cls, title) {
   var key = cls + "\u0001" + title
   var hit = cache[key]
@@ -163,7 +189,10 @@ function resolve(cls, title) {
     if (app.kind === BROWSER) inner = first(t.sites, title + " " + cls)
     else if (app.kind === TERMINAL) inner = first(t.terminalTitles, title)
     result = inner ? { icon: inner.icon, name: inner.name } : { icon: app.icon, name: app.name }
+    // Terminals carry their kind so the bar can name them by their title.
+    if (app.kind === TERMINAL) result.terminal = true
   }
+  result.tint = tintFor(result.name)
 
   if (cacheCount >= cacheLimit) {
     cache = {}

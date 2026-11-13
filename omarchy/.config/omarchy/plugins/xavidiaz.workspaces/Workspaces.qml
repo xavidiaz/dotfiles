@@ -62,7 +62,10 @@ BarWidget {
   readonly property color fgColor: root.bar ? root.bar.barForeground : Color.foreground
   readonly property color bgColor: root.bar ? root.bar.background : Color.background
   readonly property color urgentColor: Color.urgent
-  readonly property color accentColor: Color.accent
+  // The focused window's border colour (hypr/looknfeel.lua), so the active
+  // chip and the active window read as one.
+  readonly property color accentColor: "#ff9e64"
+  readonly property color numberTint: "#7aa2f7"
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(15)
 
   // --- which monitor is this bar on ----------------------------------------
@@ -546,6 +549,18 @@ BarWidget {
     return IconRules.resolve(cls, title)
   }
 
+  // What a window is called on its chip. A terminal goes by its own title
+  // (the one in kitty's tab bar), since "Claude Code" says nothing about which
+  // session it is; a bare path like "~" says even less, so that stays the app.
+  readonly property int maxChipTitle: 24
+
+  function chipName(toplevel, app) {
+    if (!app.terminal) return app.name
+    var title = root.cleanTitle(root.windowTitle(toplevel), app.name)
+    if (title === "" || /^[~\/]/.test(title)) return app.name
+    return title.length > root.maxChipTitle ? title.slice(0, root.maxChipTitle - 1) + "…" : title
+  }
+
   // Windows grouped by what they are (glyph plus name), in first-seen order.
   // Without groupIcons every window is its own group.
   function groupsFor(tops) {
@@ -553,12 +568,13 @@ BarWidget {
     var byKey = {}
     for (var i = 0; i < tops.length; i++) {
       var app = root.appFor(tops[i])
-      var key = app.icon + "\u0001" + app.name
+      var name = root.chipName(tops[i], app)
+      var key = app.icon + "\u0001" + name
       if (root.groupIcons && byKey[key] !== undefined) {
         byKey[key].count++
         continue
       }
-      var group = { icon: app.icon, name: app.name, count: 1 }
+      var group = { icon: app.icon, name: name, tint: app.tint || "", count: 1 }
       byKey[key] = group
       groups.push(group)
     }
@@ -571,7 +587,22 @@ BarWidget {
     return count > 1 ? "\u2002×" + count : ""
   }
 
-  function iconsFor(workspace) {
+  // The label is styled text, so a window title has to be escaped before it
+  // goes in: a title is whatever the app or the shell says it is.
+  function escapeText(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  }
+
+  // An app's glyph in its colour, or plain where the chip itself is coloured
+  // (the active and urgent chips) and a coloured glyph would not read.
+  function glyph(group, tinted) {
+    if (!tinted || group.tint === "") return group.icon
+    return '<font color="' + group.tint + '">' + group.icon + "</font>"
+  }
+
+  // Styled text for the chip label: the glyph per app, coloured when
+  // `tinted`, and the app's name while the workspace holds few enough kinds.
+  function iconsFor(workspace, tinted) {
     if (!root.showIcons || !workspace) return ""
     var tops = root.clientsFor(workspace)
     if (!tops || tops.length === 0) return ""
@@ -582,8 +613,8 @@ BarWidget {
     if (root.showNames && !root.vertical && groups.length <= root.maxNamedApps) {
       var named = []
       for (var n = 0; n < groups.length; n++)
-        named.push(groups[n].icon + " " + groups[n].name + root.countSuffix(groups[n].count))
-      return named.join(" ")
+        named.push(root.glyph(groups[n], tinted) + " " + root.escapeText(groups[n].name) + root.countSuffix(groups[n].count))
+      return named.join("\u2003")
     }
 
     // maxIcons caps groups; "+N" still counts the hidden windows.
@@ -591,7 +622,7 @@ BarWidget {
     var icons = []
     var hidden = 0
     for (var j = 0; j < groups.length; j++) {
-      if (j < shown) icons.push(groups[j].icon + root.countSuffix(groups[j].count))
+      if (j < shown) icons.push(root.glyph(groups[j], tinted) + root.countSuffix(groups[j].count))
       else hidden += groups[j].count
     }
     if (hidden > 0) icons.push("+" + hidden)
@@ -729,6 +760,10 @@ BarWidget {
           // marks where the keyboard is.
           readonly property bool current: pill.active && root.monitorFocused
           readonly property color textColor: pill.urgent || pill.current ? Color.background : root.fgColor
+          // Numbers in colour too: orange where this monitor's workspace is
+          // outlined, the theme blue on the rest.
+          readonly property color numberColor: pill.urgent || pill.current ? pill.textColor
+            : pill.active ? root.accentColor : root.numberTint
 
           radius: Style.spaceReal(8)
           color: pill.urgent ? root.urgentColor
@@ -751,21 +786,24 @@ BarWidget {
             clip: true
             spacing: Style.spaceReal(3)
 
-            // On the label's baseline: glyphs the bar font lacks come from a
-            // fallback font with a taller line, which a top-aligned Row would
-            // show as the number riding high.
+            // The number is the tallest thing in the row, so it sets the row's
+            // height (and the row is what gets centred in the chip); the label
+            // sits on its baseline. Anchored the other way round, the larger
+            // number poked out above a row sized to the label.
             Text {
-              anchors.baseline: pillLabel.baseline
+              id: pillNumber
               text: String(root.displayWorkspaceId(pill.workspaceId))
-              color: pill.textColor
+              color: pill.numberColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
-              font.pixelSize: root.vertical ? Style.font.icon : Style.font.body
+              // Larger than the label, so the number is what the eye finds.
+              font.pixelSize: Math.round((root.vertical ? Style.font.icon : Style.font.body) * 1.3)
               font.bold: pill.active
             }
 
             Text {
-              id: pillLabel
-              text: root.iconsFor(pill.workspace)
+              anchors.baseline: pillNumber.baseline
+              textFormat: Text.StyledText
+              text: root.iconsFor(pill.workspace, !pill.current && !pill.urgent)
               visible: text !== ""
               color: pill.textColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -830,7 +868,8 @@ BarWidget {
 
           Text {
             id: scratchpadIcons
-            text: root.iconsFor(root.scratchpadWorkspace)
+            textFormat: Text.StyledText
+            text: root.iconsFor(root.scratchpadWorkspace, true)
             visible: text !== ""
             color: root.fgColor
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
