@@ -1,5 +1,27 @@
 -- Change the default Omarchy look'n'feel.
 
+-- A thicker border (default 2) so the focused window stands out from the rest,
+-- in a warm orange: the wallpaper, the theme accent and the inactive borders
+-- are all blue or purple. Fixed, so it stays the same across themes.
+hl.config({
+  general = {
+    border_size = 4,
+    col = {
+      active_border = "rgb(ff9e64)",
+    },
+  },
+  group = {
+    col = {
+      border_active = "rgb(ff9e64)",
+    },
+  },
+})
+
+-- Unfocused windows a touch see-through (Omarchy's default is 0.96), still
+-- light enough to read one window while typing in another. Only windows on
+-- the default-opacity tag: video, games and browsers keep their own rules.
+o.window({ tag = "default-opacity" }, { opacity = "0.985 0.92" })
+
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#general
 -- hl.config({
 --   general = {
