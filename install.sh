@@ -37,6 +37,13 @@ if command -v omarchy >/dev/null; then
   omarchy pkg aur add blesh-git || echo "Failed to install blesh-git from the AUR" >&2
 fi
 
+# Intel MacBook Pros (2016-2017) with the Cirrus CS8409 codec: the in-kernel
+# driver leaves the speaker amps off, so audio "plays" in silence. This DKMS
+# driver replaces it with one that drives them.
+if command -v omarchy >/dev/null && grep -qs 'CS8409' /proc/asound/card*/codec#*; then
+  omarchy pkg aur add snd-hda-macbookpro-dkms-git || echo "Failed to install snd-hda-macbookpro-dkms-git from the AUR" >&2
+fi
+
 # Pre-flight: extract conflicting target paths from stow's dry-run output.
 # Stow reports conflicts in at least two different wordings, so match both:
 #   * cannot stow dotfiles/PKG/PATH over existing target PATH since ...
