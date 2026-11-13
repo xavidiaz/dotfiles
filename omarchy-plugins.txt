@@ -16,6 +16,7 @@ io.github.oidium.pocket-extended https://github.com/oidium/omarchy-pocket-extend
 io.github.twiking.omasettings https://github.com/twiking/omasettings.git
 mehiel.darky https://github.com/mehiel/mehiel.darky.git
 meviusisback.keybinds https://github.com/meviusisback/keybinds-plugin.git
+mkelk.keepass-picker https://github.com/mkelk/keepass-picker.git
 omaplug https://github.com/fross100/omaplug.git
 omarkey https://github.com/xavidiaz/omarkey.git
 pnkm0nk.omodoro https://github.com/Pnkm0nK/Omodoro.git

@@ -56,6 +56,15 @@ if command -v omarchy >/dev/null && ! command -v tailscale >/dev/null; then
   omarchy install service tailscale || echo "Failed to install Tailscale" >&2
 fi
 
+# KeePass Picker (omarchy-plugins.txt, Super+Shift+K): keepassxc-cli holds the
+# vault, pinentry-qt asks for the master password (qt6ct paints it in the
+# theme), and wl-copy + wtype paste into the focused window. Point it at the
+# vault once per machine with:
+#   ~/.config/omarchy/plugins/mkelk.keepass-picker/bin/keepass-picker-ctl configure
+if command -v omarchy >/dev/null; then
+  omarchy pkg add keepassxc pinentry qt6ct wl-clipboard wtype || echo "Failed to install the KeePass Picker packages" >&2
+fi
+
 # KDE Connect: clipboard sync with the phone (Android -> desktop via the
 # notification's "Send clipboard"), and sshfs + kio-fuse for "Browse device".
 # The daemon starts at login from /etc/xdg/autostart. ufw needs its ports

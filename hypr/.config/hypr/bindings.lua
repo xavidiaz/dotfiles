@@ -52,3 +52,6 @@ hl.unbind("SUPER + ALT + RETURN")
 hl.unbind("SUPER + CTRL + RETURN")
 hl.unbind("SUPER + ALT + K")
 hl.unbind("SUPER + CTRL + K")
+
+-- KeePass Picker: search the vault and type a password into the focused window.
+o.bind("SUPER + SHIFT + K", "KeePass Picker", "omarchy-shell shell toggle mkelk.keepass-picker")

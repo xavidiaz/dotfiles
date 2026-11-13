@@ -28,6 +28,14 @@ require("default.hypr.toggles")
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
 
+-- KeePass Picker's master-password prompt: floating, kept out of screen shares
+-- and fully opaque, as Omarchy does for 1Password and Bitwarden.
+local pinentry = "^(pinentry-qt|pinentry-gtk|pinentry-gnome3|pinentry)$"
+o.window(pinentry, { no_screen_share = true, float = true, center = true })
+o.window(pinentry, { tag = "-default-opacity" })
+o.window(pinentry, { opacity = "1 1" })
+o.window(pinentry, { no_blur = true })
+
 -- Load settings written by OmaSettings (omasettings:managed).
 require("hypr.omasettings")
 
