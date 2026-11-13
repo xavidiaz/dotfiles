@@ -772,7 +772,7 @@ BarWidget {
             : "transparent"
           border.width: pill.active && !pill.current && !pill.urgent ? Math.max(1, Style.spaceReal(1.5)) : 0
           border.color: root.accentColor
-          opacity: pill.active || pill.hovered ? 1 : 0.55
+          opacity: pill.active || pill.hovered ? 1 : 0.9
 
           Layout.alignment: Qt.AlignVCenter
           Layout.fillHeight: true
@@ -841,7 +841,7 @@ BarWidget {
         color: scratchpad.hovered ? Util.alpha(root.fgColor, 0.15)
           : root.scratchpadOpen ? Util.alpha(root.fgColor, root.monitorFocused ? 0.22 : 0.10)
           : "transparent"
-        opacity: root.scratchpadOpen ? 1 : 0.7
+        opacity: root.scratchpadOpen ? 1 : 0.9
 
         Layout.alignment: Qt.AlignVCenter
         Layout.fillHeight: true
