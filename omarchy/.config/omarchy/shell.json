@@ -35,16 +35,12 @@
           "weekStartDay": "monday"
         },
         {
-          "id": "omarchy.keyboard-layout"
-        },
-        {
           "id": "omarchy.weather"
-        },
+        }
+      ],
+      "right": [
         {
-          "id": "io.github.oidium.pocket-extended"
-        },
-        {
-          "id": "io.github.ilyazar.syncthing"
+          "id": "omarchy.tray"
         },
         {
           "id": "omaplug"
@@ -53,33 +49,37 @@
           "id": "omarchy.system-update"
         },
         {
-          "id": "omarchy.power"
-        }
-      ],
-      "right": [
-        {
-          "id": "omarchy.tray"
-        },
-        {
-          "id": "mkelk.keepass-picker"
-        },
-        {
-          "id": "omarchy.tailscale"
-        },
-        {
-          "id": "bramvanoploo.omarchy-t2-linux"
+          "id": "io.github.ilyazar.syncthing"
         },
         {
           "id": "furmware.cloud"
         },
         {
+          "id": "io.github.oidium.pocket-extended"
+        },
+        {
           "id": "hass"
+        },
+        {
+          "id": "mkelk.keepass-picker"
         },
         {
           "id": "mehiel.darky"
         },
         {
+          "id": "crmne.hyprmoncfg"
+        },
+        {
+          "id": "bramvanoploo.omarchy-t2-linux"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
           "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.tailscale"
         },
         {
           "id": "omarchy.network"
@@ -88,7 +88,7 @@
           "id": "omarchy.audio"
         },
         {
-          "id": "crmne.hyprmoncfg"
+          "id": "omarchy.power"
         }
       ]
     }
