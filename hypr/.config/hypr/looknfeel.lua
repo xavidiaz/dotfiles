@@ -22,6 +22,11 @@ hl.config({
 -- the default-opacity tag: video, games and browsers keep their own rules.
 o.window({ tag = "default-opacity" }, { opacity = "0.985 0.92" })
 
+-- Ease that opacity change in when focus moves (Omarchy leaves fadeSwitch
+-- off, so it jumps), a quick cue of where focus went. Speed is in
+-- tenths of a second.
+hl.animation({ leaf = "fadeSwitch", enabled = true, speed = 2.5, bezier = "easeOutQuint" })
+
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#general
 -- hl.config({
 --   general = {
