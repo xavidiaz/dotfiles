@@ -34,9 +34,11 @@ BarWidget {
   readonly property int maxIcons: root.setting("maxIcons", 0)
   // Collapse windows sharing a glyph into one icon with a "×N" count.
   readonly property bool groupIcons: root.setting("groupIcons", true)
-  // Name the app beside its icon when a workspace holds only one kind of
-  // window. Horizontal bars only; a vertical bar has no room for it.
+  // Name each app beside its icon while a workspace holds at most
+  // `maxNamedApps` kinds of window; past that the pill falls back to bare
+  // icons. Horizontal bars only; a vertical bar has no room for it.
   readonly property bool showNames: root.setting("showNames", true)
+  readonly property int maxNamedApps: Math.max(1, root.setting("maxNamedApps", 3))
   // Hovering a pill lists the windows on it, one per line.
   readonly property bool showTooltip: root.setting("showTooltip", true)
   // How far `showEmpty` fills in numbers. Never hides a workspace that has
@@ -60,6 +62,7 @@ BarWidget {
   readonly property color fgColor: root.bar ? root.bar.barForeground : Color.foreground
   readonly property color bgColor: root.bar ? root.bar.background : Color.background
   readonly property color urgentColor: Color.urgent
+  readonly property color accentColor: Color.accent
   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(15)
 
   // --- which monitor is this bar on ----------------------------------------
@@ -213,12 +216,27 @@ BarWidget {
 
   function clientsFor(workspace) {
     if (!workspace) return []
-    if (!root.clientsLoaded) return workspace.toplevels ? workspace.toplevels.values : []
+    if (!root.clientsLoaded) return workspace.toplevels ? workspace.toplevels.values.slice().sort(root.compareByPosition) : []
     // Hidden group tabs are still open windows and retain their icons.
     return root.liveClients.filter(function(client) {
       return client && client.workspace && client.workspace.id === workspace.id &&
         client.mapped !== false
-    })
+    }).sort(root.compareByPosition)
+  }
+
+  // Left to right, then top to bottom, so the pill reads in the order the
+  // windows sit on screen rather than the order they were opened in.
+  // Snapshot clients carry `at`; Quickshell toplevels keep it on lastIpcObject.
+  function positionOf(client) {
+    if (client && client.at) return client.at
+    var ipc = client ? client.lastIpcObject : null
+    return ipc && ipc.at ? ipc.at : [0, 0]
+  }
+
+  function compareByPosition(left, right) {
+    var a = root.positionOf(left)
+    var b = root.positionOf(right)
+    return a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]
   }
 
   function hasWindows(workspace) {
@@ -559,8 +577,14 @@ BarWidget {
     if (!tops || tops.length === 0) return ""
 
     var groups = root.groupsFor(tops)
-    if (root.showNames && !root.vertical && groups.length === 1)
-      return groups[0].icon + " " + groups[0].name + root.countSuffix(groups[0].count)
+    // Named groups are split by a wider em space so "Brave  Claude Code"
+    // reads as two apps, not one three-word name.
+    if (root.showNames && !root.vertical && groups.length <= root.maxNamedApps) {
+      var named = []
+      for (var n = 0; n < groups.length; n++)
+        named.push(groups[n].icon + " " + groups[n].name + root.countSuffix(groups[n].count))
+      return named.join(" ")
+    }
 
     // maxIcons caps groups; "+N" still counts the hidden windows.
     var shown = root.maxIcons > 0 ? Math.min(groups.length, root.maxIcons) : groups.length
@@ -592,13 +616,46 @@ BarWidget {
   function tooltipFor(label, workspace) {
     var tops = root.clientsFor(workspace)
     if (!tops || tops.length === 0) return label + " · empty"
-    var lines = [label]
+    // One heading per app, in on-screen order. A lone window keeps its title
+    // on the heading; several get a numbered list of titles beneath it.
+    var groups = []
+    var byKey = {}
     for (var i = 0; i < tops.length; i++) {
       var app = root.appFor(tops[i])
+      var key = app.icon + "\u0001" + app.name
       var title = root.cleanTitle(root.windowTitle(tops[i]), app.name)
-      lines.push(app.icon + "  " + app.name + (title !== "" && title.toLowerCase() !== app.name.toLowerCase() ? " — " + title : ""))
+      if (title.toLowerCase() === app.name.toLowerCase()) title = ""
+      if (byKey[key] === undefined) {
+        byKey[key] = { icon: app.icon, name: app.name, titles: [] }
+        groups.push(byKey[key])
+      }
+      byKey[key].titles.push(title)
     }
-    return lines.join("\n")
+
+    var lines = [label]
+    for (var g = 0; g < groups.length; g++) {
+      var group = groups[g]
+      if (group.titles.length === 1) {
+        lines.push(group.icon + "  " + group.name + (group.titles[0] !== "" ? " — " + group.titles[0] : ""))
+        continue
+      }
+      lines.push(group.icon + "  " + group.name)
+      for (var t = 0; t < group.titles.length; t++)
+        lines.push("   " + (t + 1) + ". " + (group.titles[t] || "Untitled"))
+    }
+    return root.leftAligned(lines)
+  }
+
+  // The bar's shared tooltip centres every line and has no alignment option,
+  // so each line is padded to the longest one: in the monospaced bar font,
+  // equal-width lines centre into a left-aligned block. No-break spaces,
+  // because the trailing plain spaces would not count towards the width.
+  function leftAligned(lines) {
+    var widest = 0
+    for (var i = 0; i < lines.length; i++) widest = Math.max(widest, lines[i].length)
+    return lines.map(function(line) {
+      return line + " ".repeat(widest - line.length)
+    }).join("\n")
   }
 
   // Global ids are what Hyprland dispatches on; the label is the only thing
@@ -667,12 +724,20 @@ BarWidget {
           // Read by the bar to keep the tooltip up while the pointer stays.
           readonly property bool tooltipHovered: pill.hovered
 
+          // The workspace you are on is a solid accent pill; the one showing
+          // on the other monitors is only outlined, so the solid pill always
+          // marks where the keyboard is.
+          readonly property bool current: pill.active && root.monitorFocused
+          readonly property color textColor: pill.urgent || pill.current ? Color.background : root.fgColor
+
           radius: Style.spaceReal(8)
           color: pill.urgent ? root.urgentColor
-            : pill.active ? Util.alpha(root.fgColor, root.monitorFocused ? 0.22 : 0.10)
+            : pill.current ? root.accentColor
             : pill.hovered ? Util.alpha(root.fgColor, 0.15)
             : "transparent"
-          opacity: pill.active ? 1 : 0.7
+          border.width: pill.active && !pill.current && !pill.urgent ? Math.max(1, Style.spaceReal(1.5)) : 0
+          border.color: root.accentColor
+          opacity: pill.active || pill.hovered ? 1 : 0.55
 
           Layout.alignment: Qt.AlignVCenter
           Layout.fillHeight: true
@@ -686,17 +751,23 @@ BarWidget {
             clip: true
             spacing: Style.spaceReal(3)
 
+            // On the label's baseline: glyphs the bar font lacks come from a
+            // fallback font with a taller line, which a top-aligned Row would
+            // show as the number riding high.
             Text {
+              anchors.baseline: pillLabel.baseline
               text: String(root.displayWorkspaceId(pill.workspaceId))
-              color: pill.urgent ? root.bgColor : root.fgColor
+              color: pill.textColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: root.vertical ? Style.font.icon : Style.font.body
+              font.bold: pill.active
             }
 
             Text {
+              id: pillLabel
               text: root.iconsFor(pill.workspace)
               visible: text !== ""
-              color: pill.urgent ? root.bgColor : root.fgColor
+              color: pill.textColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
               font.pixelSize: root.vertical ? Style.font.icon : Style.font.body
             }
@@ -749,6 +820,7 @@ BarWidget {
           spacing: Style.spaceReal(3)
 
           Text {
+            anchors.baseline: scratchpadIcons.baseline
             text: root.scratchpadLabel
             visible: text !== ""
             color: root.fgColor
@@ -757,6 +829,7 @@ BarWidget {
           }
 
           Text {
+            id: scratchpadIcons
             text: root.iconsFor(root.scratchpadWorkspace)
             visible: text !== ""
             color: root.fgColor
