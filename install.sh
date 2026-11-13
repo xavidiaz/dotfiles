@@ -10,6 +10,7 @@ packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit keepassxc
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
   mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow chawan
+  fontconfig
 )
 
 # Real directory, so stow links only the file inside it: if stow linked the
@@ -35,6 +36,17 @@ if command -v omarchy >/dev/null; then
   omarchy pkg add glow || echo "Failed to install glow" >&2
   omarchy pkg add chawan || echo "Failed to install chawan" >&2
   omarchy pkg aur add blesh-git || echo "Failed to install blesh-git from the AUR" >&2
+fi
+
+# Atkinson Hyperlegible fonts, designed so similar letters (I l 1, O 0, b d p q)
+# are hard to mix up: the Mono, patched with Nerd Font icons, for terminals and
+# the bar, and Next for interface text. fontconfig/ makes them the monospace
+# and sans-serif defaults; GTK apps take their font from gsettings.
+if command -v omarchy >/dev/null; then
+  omarchy pkg add otf-atkinsonhyperlegiblemono-nerd || echo "Failed to install otf-atkinsonhyperlegiblemono-nerd" >&2
+  omarchy pkg aur add otf-atkinson-hyperlegible-next || echo "Failed to install otf-atkinson-hyperlegible-next from the AUR" >&2
+  gsettings set org.gnome.desktop.interface font-name 'Atkinson Hyperlegible Next 11' 2>/dev/null || true
+  gsettings set org.gnome.desktop.interface monospace-font-name 'AtkynsonMono Nerd Font 11' 2>/dev/null || true
 fi
 
 # KDE Connect: clipboard sync with the phone (Android -> desktop via the
