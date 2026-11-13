@@ -37,6 +37,18 @@ if command -v omarchy >/dev/null; then
   omarchy pkg aur add blesh-git || echo "Failed to install blesh-git from the AUR" >&2
 fi
 
+# KDE Connect: clipboard sync with the phone (Android -> desktop via the
+# notification's "Send clipboard"), and sshfs + kio-fuse for "Browse device".
+# The daemon starts at login from /etc/xdg/autostart. ufw needs its ports
+# open; sudo is only asked for when the rules are missing.
+if command -v omarchy >/dev/null; then
+  omarchy pkg add kdeconnect sshfs kio-fuse || echo "Failed to install KDE Connect" >&2
+  if systemctl is-active -q ufw && ! grep -qs '1714:1764' /etc/ufw/user.rules; then
+    { sudo ufw allow 1714:1764/udp && sudo ufw allow 1714:1764/tcp; } >/dev/null \
+      || echo "Failed to open the KDE Connect ports in ufw" >&2
+  fi
+fi
+
 # Intel MacBook Pros (2016-2017) with the Cirrus CS8409 codec: the in-kernel
 # driver leaves the speaker amps off, so audio "plays" in silence. This DKMS
 # driver replaces it with one that drives them.
