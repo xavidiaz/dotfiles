@@ -1,2 +1,7 @@
 [font]
 base-size = 15
+
+[bar]
+# A solid bar ("transparent": false in shell.json) at 90%: a hint of the
+# wallpaper, dark enough that the chips and icons read clearly.
+background-alpha = 0.9
