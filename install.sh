@@ -28,6 +28,15 @@ if ! command -v stow >/dev/null; then
   exit 1
 fi
 
+# Full system update first. Arch doesn't support partial upgrades: adding a
+# package to an out-of-date system can pull in a build made for newer libraries
+# (kdeconnect needing Qt 6.12 on a Qt 6.11 system), which then fails to start.
+# -y answers Omarchy's prompts and never reboots by itself; it only says when a
+# reboot is due. Stopping on failure keeps the installs below off a half-updated system.
+if command -v omarchy >/dev/null; then
+  omarchy update -y || { echo "omarchy update failed; fix it and re-run install.sh" >&2; exit 1; }
+fi
+
 # Packages the configs rely on: glow renders Markdown for the bat wrapper in
 # ~/.bashrc, chawan is the terminal web browser (cha), and ble.sh (AUR) gives
 # bash its Vim editing and the prompt's mode chip.
