@@ -56,6 +56,36 @@ hl.unbind("SUPER + CTRL + RETURN")
 hl.unbind("SUPER + ALT + K")
 hl.unbind("SUPER + CTRL + K")
 
+-- Global workspaces, as before Omarchy 4.5 made them per monitor (each monitor
+-- its own 1-10, the second monitor numbered 11-20). Super + 1-5 are the laptop's
+-- and Super + 6-0 the external display's, through the workspace rules in
+-- monitors.lua. Turning off the reconcile stops Omarchy renumbering workspaces
+-- into per-monitor blocks on reload or when a monitor comes and goes.
+o.workspaces.reconcile = function() end
+
+for workspace = 1, 10 do
+  local key = "code:" .. tostring(workspace + 9)
+  local id = tostring(workspace)
+  hl.unbind("SUPER + " .. key)
+  hl.unbind("SUPER + SHIFT + " .. key)
+  hl.unbind("SUPER + SHIFT + ALT + " .. key)
+  o.bind("SUPER + " .. key, "Switch to workspace " .. id, hl.dsp.focus({ workspace = id }))
+  o.bind("SUPER + SHIFT + " .. key, "Move window to workspace " .. id, hl.dsp.window.move({ workspace = id }))
+  o.bind("SUPER + SHIFT + ALT + " .. key, "Move window silently to workspace " .. id,
+    hl.dsp.window.move({ workspace = id, follow = false }))
+end
+
+-- Moving a workspace to another monitor keeps its number.
+for _, dir in ipairs({ { "LEFT", "l" }, { "RIGHT", "r" }, { "UP", "u" }, { "DOWN", "d" } }) do
+  hl.unbind("SUPER + SHIFT + ALT + " .. dir[1])
+  o.bind("SUPER + SHIFT + ALT + " .. dir[1], "Move workspace to " .. dir[1]:lower() .. " monitor", function()
+    local target = hl.get_monitor(dir[2])
+    if target then
+      hl.dispatch(hl.dsp.workspace.move({ monitor = target.name }))
+    end
+  end)
+end
+
 -- KeePass Picker: search the vault and type a password into the focused window.
 o.bind("SUPER + SHIFT + K", "KeePass Picker", "omarchy-shell shell toggle mkelk.keepass-picker")
 
