@@ -31,3 +31,10 @@ keepassxc/
 # Per-machine CodeSpaces address (tailnet IP) - private, never commit.
 # ~/.ssh/config.d/codespaces-host lands here if stow folded ~/.ssh/config.d.
 codespaces/.ssh/config.d/codespaces-host
+
+# Python bytecode from scripts such as hypr/scripts/screenshot-scroll
+__pycache__/
+
+# hyprmoncfg's runtime record of this machine's displays (which monitor fell
+# back and when) - per-machine state, like monitors.lua.
+hyprmoncfg/.config/hyprmoncfg/display-fallbacks.json

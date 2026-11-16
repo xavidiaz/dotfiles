@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""Scrolling screenshot, like a phone's: pick a window or region the same way
+as the regular screenshot, then the focused app is scrolled with the Down key
+and the frames are stitched into one tall image. It stops at the end of the
+page, or when the keybind is pressed again. Starts from the current position;
+press Home first for the whole page.
+
+The result is saved and copied like Omarchy's screenshots
+(omarchy-capture-screenshot), and the notification opens it in the editor.
+"""
+
+import json
+import os
+import re
+import struct
+import subprocess
+import sys
+import tempfile
+import time
+import zlib
+from datetime import datetime
+
+RUNTIME = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+PIDFILE = os.path.join(RUNTIME, "screenshot-scroll.pid")
+STOPFILE = os.path.join(RUNTIME, "screenshot-scroll.stop")
+
+MAX_FRAMES = 80
+MAX_HEIGHT = 40000  # device pixels
+SCROLLBAR = 40  # right-edge columns ignored when matching (scrollbar thumb moves)
+
+
+def run(*cmd, **kw):
+    return subprocess.run(cmd, capture_output=True, text=True, **kw).stdout.strip()
+
+
+def hypr_eval(lua):
+    subprocess.run(["hyprctl", "eval", lua], capture_output=True)
+
+
+def notify(*args):
+    subprocess.run(["omarchy-notification-send", *args], capture_output=True)
+
+
+def already_running():
+    """A second press of the keybind stops the running capture."""
+    try:
+        pid = int(open(PIDFILE).read())
+        os.kill(pid, 0)
+    except (OSError, ValueError):
+        return False
+    open(STOPFILE, "w").close()
+    return True
+
+
+def grab(geometry):
+    """Capture the region as (width, height, rgb bytes)."""
+    ppm = subprocess.run(["grim", "-g", geometry, "-t", "ppm", "-"], capture_output=True).stdout
+    m = re.match(rb"P6\s+(\d+)\s+(\d+)\s+(\d+)\s", ppm)
+    w, h = int(m[1]), int(m[2])
+    return w, h, ppm[m.end():]
+
+
+def grab_settled(geometry):
+    """Wait out smooth scrolling and lazy-loaded content: capture until two frames match."""
+    time.sleep(0.25)
+    frame = grab(geometry)
+    for _ in range(10):
+        time.sleep(0.12)
+        again = grab(geometry)
+        if again[2] == frame[2]:
+            break
+        frame = again
+    return frame
+
+
+def row_hashes(frame):
+    w, h, data = frame
+    stride = w * 3
+    usable = max(stride - SCROLLBAR * 3, stride // 2)
+    hashes, uniform = [], []
+    for y in range(h):
+        row = data[y * stride : y * stride + usable]
+        hashes.append(hash(row))
+        uniform.append(row == row[:3] * (usable // 3))
+    return hashes, uniform
+
+
+def match(prev, cur):
+    """How far the content moved up from prev to cur, plus the static row runs
+    at the top and bottom (browser chrome, sticky headers and footers)."""
+    ha, ua = prev
+    hb, ub = cur
+    h = len(ha)
+
+    top = 0
+    while top < h and ha[top] == hb[top]:
+        top += 1
+    if top == h:
+        return 0, h, 0
+    bottom = 0
+    while ha[h - 1 - bottom] == hb[h - 1 - bottom]:
+        bottom += 1
+
+    # Each distinctive row of cur votes for the offsets where it appears in prev.
+    positions = {}
+    for y, (hsh, uni) in enumerate(zip(ha, ua)):
+        if not uni:
+            positions.setdefault(hsh, []).append(y)
+    votes = {}
+    for y, (hsh, uni) in enumerate(zip(hb, ub)):
+        if uni:
+            continue
+        found = positions.get(hsh, ())
+        if len(found) > 3:  # repeated pattern, not informative
+            continue
+        for p in found:
+            if p > y:
+                votes[p - y] = votes.get(p - y, 0) + 1
+    if not votes:
+        return None, top, bottom
+    shift, score = max(votes.items(), key=lambda kv: kv[1])
+    if score < 8:
+        return None, top, bottom
+    return shift, top, bottom
+
+
+def write_png(path, width, rows):
+    def chunk(kind, body):
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+    z = zlib.compressobj(6)
+    idat = bytearray()
+    for row in rows:
+        idat += z.compress(b"\0" + row)
+    idat += z.flush()
+    with open(path, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n")
+        f.write(chunk(b"IHDR", struct.pack(">IIBBBBB", width, len(rows), 8, 2, 0, 0, 0)))
+        f.write(chunk(b"IDAT", bytes(idat)))
+        f.write(chunk(b"IEND", b""))
+
+
+def window_at(x, y):
+    """The window containing the point on the active workspace, smallest first."""
+    ws = json.loads(run("hyprctl", "activeworkspace", "-j"))["id"]
+    hits = [
+        c
+        for c in json.loads(run("hyprctl", "clients", "-j"))
+        if c["workspace"]["id"] == ws
+        and c["at"][0] <= x < c["at"][0] + c["size"][0]
+        and c["at"][1] <= y < c["at"][1] + c["size"][1]
+    ]
+    return min(hits, key=lambda c: c["size"][0] * c["size"][1], default=None)
+
+
+def capture(geometry, workdir):
+    """Scroll and grab frames. Returns the frame files, the shift between each
+    pair, and the bottom static run to treat as a sticky footer."""
+    frames, shifts, bottoms = [], [], []
+    first = grab(geometry)
+    width, height = first[0], first[1]
+    path = os.path.join(workdir, "0.rgb")
+    open(path, "wb").write(first[2])
+    frames.append(path)
+    prev = row_hashes(first)
+
+    keys, px_per_key, total = 3, None, height
+    while len(frames) < MAX_FRAMES and total < MAX_HEIGHT and not os.path.exists(STOPFILE):
+        subprocess.run(["wtype", *["-k", "Down"] * keys])
+        frame = grab_settled(geometry)
+        cur = row_hashes(frame)
+        shift, top, bottom = match(prev, cur)
+        if shift == 0:  # nothing moved: end of the page
+            break
+        if shift is None:
+            notify("Scrolling screenshot stopped early", "Couldn't line up the next part of the page", "-u", "critical")
+            break
+
+        path = os.path.join(workdir, f"{len(frames)}.rgb")
+        open(path, "wb").write(frame[2])
+        frames.append(path)
+        shifts.append(shift)
+        bottoms.append(bottom)
+        total += shift
+        prev = cur
+
+        # Aim for ~60% of the scrolling area per step, so frames overlap enough to match.
+        if px_per_key is None or shift / keys > px_per_key * 0.8:
+            px_per_key = shift / keys
+        moving = max(height - top - bottom, 1)
+        keys = max(1, min(60, int(moving * 0.6 / px_per_key)))
+
+    return width, height, frames, shifts, min(bottoms, default=0)
+
+
+def stitch(width, height, frames, shifts, footer):
+    stride = width * 3
+    footer = min(footer, height - max(shifts, default=0))
+
+    def rows(path, start, end):
+        data = open(path, "rb").read()
+        return [data[y * stride : (y + 1) * stride] for y in range(start, end)]
+
+    out = rows(frames[0], 0, height - footer)
+    for path, shift in zip(frames[1:], shifts):
+        out += rows(path, height - footer - shift, height - footer)
+    out += rows(frames[-1], height - footer, height)
+    return out
+
+
+def main():
+    if already_running():
+        return
+    open(PIDFILE, "w").write(str(os.getpid()))
+    try:
+        os.remove(STOPFILE)
+    except FileNotFoundError:
+        pass
+
+    # Same as omarchy-capture-screenshot: hardware cursors keep the pointer out of grim's frames.
+    hw = json.loads(run("hyprctl", "getoption", "cursor:no_hardware_cursors", "-j"))["int"]
+    hypr_eval("hl.config({ cursor = { no_hardware_cursors = 0 } })")
+    try:
+        geometry = run("omarchy-capture-region", "smart")
+        m = re.match(r"^(-?\d+),(-?\d+) (\d+)x(\d+)$", geometry)
+        if not m:
+            return
+        x, y, w, h = map(int, m.groups())
+
+        # The keys go to the focused window, so focus the one being captured.
+        win = window_at(x + w // 2, y + h // 2)
+        if win:
+            hypr_eval(f'hl.dispatch(hl.dsp.focus({{ window = "address:{win["address"]}" }}))')
+        time.sleep(0.3)  # let the picker's freeze overlay go away
+
+        with tempfile.TemporaryDirectory(prefix="screenshot-scroll-") as workdir:
+            width, height, frames, shifts, footer = capture(geometry, workdir)
+            rows = stitch(width, height, frames, shifts, footer)
+
+            outdir = subprocess.run(
+                ["bash", "-c", "[[ -f ~/.config/user-dirs.dirs ]] && source ~/.config/user-dirs.dirs; "
+                 'echo "${OMARCHY_SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-$HOME/Pictures}}"'],
+                capture_output=True, text=True).stdout.strip()
+            os.makedirs(outdir, exist_ok=True)
+            path = os.path.join(outdir, f"screenshot-{datetime.now():%Y-%m-%d_%H-%M-%S}-scroll.png")
+            write_png(path, width, rows)
+
+        with open(path, "rb") as f:
+            subprocess.run(["wl-copy", "--type", "image/png"], stdin=f)
+        print(path)
+        editor = os.environ.get("OMARCHY_SCREENSHOT_EDITOR", "tensaku-edit")
+        notify("Scrolling screenshot saved to clipboard and file",
+               f"{len(frames)} frames, {len(rows)}px tall. Click to edit",
+               "--image", path, "--exec", editor, path)
+    finally:
+        hypr_eval(f"hl.config({{ cursor = {{ no_hardware_cursors = {hw} }} }})")
+        for f in (PIDFILE, STOPFILE):
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
+
+
+if __name__ == "__main__":
+    sys.exit(main())

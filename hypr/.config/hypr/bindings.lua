@@ -28,6 +28,9 @@
 -- o.bind("SUPER + H", nil, "voxtype record toggle")
 -- o.bind("SUPER + PERIOD", nil, "omarchy-shell shell toggle omarchy.emojis")
 
+-- Scrolling screenshot (whole page, like a phone). Press again to stop early.
+o.bind("SHIFT + PRINT", "Scrolling screenshot", "~/.config/hypr/scripts/screenshot-scroll")
+
 -- Brackets on Left Alt + number row.
 -- The se(mac) layout puts [ ] { } on AltGr (Right Alt = Mod5): AltGr+8/9 and
 -- AltGr+Shift+8/9. This replays that exact chord to the focused surface so the
