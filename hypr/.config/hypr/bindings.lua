@@ -101,3 +101,10 @@ if o.dictation_installed and o.dictation_installed() then
   o.bind("SUPER + CTRL + X", "Toggle dictation", "omarchy-dictation toggle")
   o.bind_hold("F9", "Start dictation (push-to-talk)", "omarchy-dictation start", "Stop dictation (push-to-talk)", "omarchy-dictation stop")
 end
+
+
+-- BEGIN omarchy-read-aloud
+-- Read the text highlighted in the window under the pointer; press again on
+-- the same text to stop. Added by Read Aloud; remove it from its panel.
+o.bind("SUPER + R", "Read selection aloud", "/home/xavidiaz/.local/bin/read-aloud selection")
+-- END omarchy-read-aloud

@@ -182,4 +182,15 @@ if [ -x "$battery_service" ] || [ -f "$battery_service" ]; then
   sudo bash "$battery_service" >/dev/null || echo "Failed to install the peripheral-battery service" >&2
 fi
 
+# Read Aloud (omarchy-plugins.txt, Super+R) runs offline TTS from an engine and
+# voice model it installs outside the plugin folder (~/.local/share/omarchy-read-aloud,
+# ~/.local/bin/read-aloud, a user service). Its setup is the plugin's own; run it
+# when missing or when a plugin update bumped the engine. The Super+R block in
+# bindings.lua is stowed with hypr/.
+read_aloud="$HOME/.config/omarchy/plugins/jebin2.read-aloud/bin/read-aloud-setup"
+if [ -x "$read_aloud" ] && "$read_aloud" check | grep -qE '"installed":false|"update":true'; then
+  omarchy pkg add bun || echo "Failed to install Bun" >&2
+  "$read_aloud" setup || echo "Failed to set up Read Aloud" >&2
+fi
+
 echo "Done. Remember: gh auth login, and see README.md for _system-reference/ (keyd)."
