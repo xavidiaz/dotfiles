@@ -1,0 +1,37 @@
+#!/bin/bash
+# Pre-4.5 Omarchy screenshot flow, kept after 4.5 moved Print to Omasnap.
+# The screen freezes and Omarchy's slurp picker opens (omarchy-capture-region,
+# still shipped for screen recording). Enter takes the window under the
+# pointer, Ctrl+Enter the monitor, Tab and the arrows move between windows,
+# and a drag selects a region. The shot is saved, copied, and announced; click
+# the notification to annotate it in Omasnap.
+
+[[ -f ~/.config/user-dirs.dirs ]] && source ~/.config/user-dirs.dirs
+OUTPUT_DIR="${OMARCHY_SCREENSHOT_DIR:-${XDG_PICTURES_DIR:-$HOME/Pictures}}"
+mkdir -p "$OUTPUT_DIR"
+
+# Pressing Print again while picking cancels.
+pkill slurp && exit 0
+
+# Hardware cursors while grim runs, so a software cursor isn't baked into the shot.
+NO_HW_CURSORS=$(hyprctl getoption cursor:no_hardware_cursors -j | jq '.int')
+set_no_hw_cursors() {
+  hyprctl eval "hl.config({ cursor = { no_hardware_cursors = $1 } })" &>/dev/null ||
+    hyprctl keyword cursor:no_hardware_cursors "$1" &>/dev/null
+}
+cleanup() {
+  [[ -n $FREEZE_PID ]] && kill "$FREEZE_PID" 2>/dev/null
+  set_no_hw_cursors "$NO_HW_CURSORS"
+}
+trap cleanup EXIT
+set_no_hw_cursors 0
+
+{ read -r FREEZE_PID; read -r SELECTION; } < <(omarchy-capture-region "${1:-smart}" --keep-freeze)
+[[ -z $SELECTION ]] && exit 0
+
+FILEPATH="$OUTPUT_DIR/screenshot-$(date +'%Y-%m-%d_%H-%M-%S').png"
+grim -g "$SELECTION" "$FILEPATH" || exit 1
+wl-copy --type image/png <"$FILEPATH"
+
+omarchy-notification-send "Screenshot saved to clipboard and file" "Click to edit" \
+  --image "$FILEPATH" --exec omasnap --file "$FILEPATH" || true

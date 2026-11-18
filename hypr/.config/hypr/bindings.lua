@@ -28,6 +28,12 @@
 -- o.bind("SUPER + H", nil, "voxtype record toggle")
 -- o.bind("SUPER + PERIOD", nil, "omarchy-shell shell toggle omarchy.emojis")
 
+-- Print keeps the pre-4.5 flow: frozen screen, Enter takes the window under
+-- the pointer (Tab/arrows move, Ctrl+Enter the monitor), drag for a region.
+-- Ctrl+Print opens Omasnap, 4.5's new capture overlay.
+o.rebind("PRINT", "Screenshot", "~/.config/hypr/scripts/screenshot")
+o.bind("CTRL + PRINT", "Screenshot (Omasnap)", "omarchy-capture-screenshot")
+
 -- Scrolling screenshot (whole page, like a phone). Press again to stop early.
 o.bind("SHIFT + PRINT", "Scrolling screenshot", "~/.config/hypr/scripts/screenshot-scroll")
 
