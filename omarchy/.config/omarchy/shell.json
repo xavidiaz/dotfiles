@@ -17,10 +17,10 @@
           "id": "io.github.twiking.omasettings"
         },
         {
-          "id": "xavidiaz.workspaces"
+          "id": "omarchy.agents"
         },
         {
-          "id": "omarchy.agents"
+          "id": "xavidiaz.workspaces"
         }
       ],
       "center": [
@@ -35,7 +35,29 @@
           "weekStartDay": "monday"
         },
         {
-          "id": "omarchy.elsewhen"
+          "id": "omarchy.elsewhen",
+          "cities": [
+            {
+              "name": "Stockholm",
+              "zone": "Europe/Stockholm"
+            },
+            {
+              "name": "Dubai",
+              "zone": "Asia/Dubai"
+            },
+            {
+              "name": "Tokyo",
+              "zone": "Asia/Tokyo"
+            },
+            {
+              "name": "Los Angeles",
+              "zone": "America/Los_Angeles"
+            },
+            {
+              "name": "New York",
+              "zone": "America/New_York"
+            }
+          ]
         },
         {
           "id": "omarchy.weather"
@@ -46,19 +68,41 @@
           "id": "omarchy.tray"
         },
         {
-          "id": "omaplug"
+          "id": "omarchy.system-update"
         },
         {
-          "id": "omarchy.system-update"
+          "id": "io.github.oidium.pocket-extended"
+        },
+        {
+          "id": "gexavi.peripheral-battery"
+        },
+        {
+          "id": "omarchy.bluetooth"
+        },
+        {
+          "id": "omarchy.network"
+        },
+        {
+          "id": "omarchy.audio"
+        },
+        {
+          "id": "omarchy.power"
+        }
+      ],
+      "centerBegin": [],
+      "centerEnd": [],
+      "tray": [
+        {
+          "id": "jebin2.read-aloud"
+        },
+        {
+          "id": "omaplug"
         },
         {
           "id": "io.github.ilyazar.syncthing"
         },
         {
           "id": "furmware.cloud"
-        },
-        {
-          "id": "io.github.oidium.pocket-extended"
         },
         {
           "id": "hass"
@@ -76,30 +120,12 @@
           "id": "bramvanoploo.omarchy-t2-linux"
         },
         {
-          "id": "gexavi.peripheral-battery"
-        },
-        {
           "id": "omarchy.keyboard-layout"
         },
         {
-          "id": "omarchy.bluetooth"
-        },
-        {
           "id": "omarchy.tailscale"
-        },
-        {
-          "id": "omarchy.network"
-        },
-        {
-          "id": "omarchy.audio"
-        },
-        {
-          "id": "omarchy.power"
         }
-      ],
-      "centerBegin": [],
-      "centerEnd": [],
-      "tray": []
+      ]
     }
   },
   "plugins": [
