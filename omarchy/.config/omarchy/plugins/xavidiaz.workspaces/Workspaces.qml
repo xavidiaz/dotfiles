@@ -320,6 +320,7 @@ BarWidget {
   Component.onCompleted: {
     root.refreshClients()
     if (root.rulesNeeded) root.refreshRules()
+    refitTimer.restart()
   }
 
   function ruleMonitorMatches(spec, mine, mineDesc) {
@@ -552,23 +553,88 @@ BarWidget {
   // What a window is called on its chip. A terminal goes by its own title
   // (the one in kitty's tab bar), since "Claude Code" says nothing about which
   // session it is; a bare path like "~" says even less, so that stays the app.
-  readonly property int maxChipTitle: 24
-
-  function chipName(toplevel, app) {
+  // How long that title may get depends on the detail level below.
+  function chipName(toplevel, app, maxTitle) {
     if (!app.terminal) return app.name
     var title = root.cleanTitle(root.windowTitle(toplevel), app.name)
     if (title === "" || /^[~\/]/.test(title)) return app.name
-    return title.length > root.maxChipTitle ? title.slice(0, root.maxChipTitle - 1) + "…" : title
+    return title.length > maxTitle ? title.slice(0, maxTitle - 1) + "…" : title
+  }
+
+  // --- fitting the room left of the clock ----------------------------------
+  // The chips take all the room there is between this widget and the centred
+  // clock, and give up detail one step at a time only when they would run
+  // into it:
+  //   4  every workspace named, titles up to 24 characters
+  //   3  titles cut to 12
+  //   2  only the active workspace named, the rest number plus icons
+  //   1  the active one named only while it holds at most two apps
+  //   0  icons only
+  // Each level is measured in the bar font before it is picked, so a level
+  // is only used when it fits.
+  readonly property real screenWidth: {
+    if (root.hyprMonitor && root.hyprMonitor.width > 0)
+      return root.hyprMonitor.width / (root.hyprMonitor.scale || 1)
+    return barWindow && barWindow.screen ? barWindow.screen.width : 0
+  }
+  // Room kept clear before the middle of the screen: half the clock, the
+  // indicators left of it and a gap. The bar does not tell widgets where its
+  // centre group starts, so this is a fixed allowance.
+  readonly property real centerReserve: root.setting("centerReserve", 230)
+  readonly property real budget: {
+    var _ = root.revision
+    if (root.screenWidth <= 0) return 0
+    var _x = root.x  // re-measure when the widgets before this one resize
+    var at = root.mapToItem(null, 0, 0).x
+    return root.screenWidth / 2 - root.centerReserve - at
+  }
+  // Measuring text inside a binding feeds back into it, so the level is
+  // worked out in a short debounced step whenever anything it reads changes.
+  property int detail: 4
+  readonly property string fitKey: [root.revision, root.budget, root.activeId, root.monitorFocused, root.visibleIds.join(",")].join("|")
+  onFitKeyChanged: refitTimer.restart()
+  Timer { id: refitTimer; interval: 30; onTriggered: root.refit() }
+
+  function refit() {
+    var ids = root.visibleIds
+    if (root.vertical || root.budget <= 0) { root.detail = 4; return }
+    for (var level = 4; level > 0; level--) {
+      if (root.estimatedWidth(level, ids) <= root.budget) { root.detail = level; return }
+    }
+    root.detail = 0
+  }
+
+  TextMetrics { id: labelMetrics; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Style.font.body }
+  TextMetrics { id: numberMetrics; font.family: root.bar ? root.bar.fontFamily : Style.font.family; font.pixelSize: Math.round(Style.font.body * 1.3); font.bold: true }
+
+  function plainWidth(metrics, text) {
+    metrics.text = String(text).replace(/<[^>]*>/g, "").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+    return metrics.advanceWidth
+  }
+
+  // Width of the whole strip at a detail level, laid out as the chips are:
+  // number, label, chip padding and the gaps between chips.
+  function estimatedWidth(level, ids) {
+    var total = Style.spaceReal(8) + root.trailingGap
+    for (var i = 0; i < ids.length; i++) {
+      var workspace = root.workspaceById(ids[i])
+      var current = ids[i] === root.activeId && root.monitorFocused
+      var label = root.iconsFor(workspace, false, current, level)
+      total += root.plainWidth(numberMetrics, root.displayWorkspaceId(ids[i]))
+      if (label !== "") total += Style.spaceReal(3) + root.plainWidth(labelMetrics, label)
+      total += Style.spaceReal(16) + (i > 0 ? Style.spaceReal(4) : 0)
+    }
+    return total
   }
 
   // Windows grouped by what they are (glyph plus name), in first-seen order.
   // Without groupIcons every window is its own group.
-  function groupsFor(tops) {
+  function groupsFor(tops, maxTitle) {
     var groups = []
     var byKey = {}
     for (var i = 0; i < tops.length; i++) {
       var app = root.appFor(tops[i])
-      var name = root.chipName(tops[i], app)
+      var name = root.chipName(tops[i], app, maxTitle)
       var key = app.icon + "\u0001" + name
       if (root.groupIcons && byKey[key] !== undefined) {
         byKey[key].count++
@@ -602,19 +668,21 @@ BarWidget {
 
   // Styled text for the chip label: the glyph per app, coloured when
   // `tinted`, and the app's name while the workspace holds few enough kinds.
-  function iconsFor(workspace, tinted) {
+  function iconsFor(workspace, tinted, current, level) {
     if (!root.showIcons || !workspace) return ""
     var tops = root.clientsFor(workspace)
     if (!tops || tops.length === 0) return ""
 
-    var groups = root.groupsFor(tops)
+    var groups = root.groupsFor(tops, level >= 4 ? 24 : 12)
     // Named groups are split by a wider em space so "Brave  Claude Code"
     // reads as two apps, not one three-word name.
-    if (root.showNames && !root.vertical && groups.length <= root.maxNamedApps) {
-      var named = []
+    var named = root.showNames && !root.vertical && groups.length <= root.maxNamedApps
+      && (level >= 3 || (current && level === 2) || (current && level === 1 && groups.length <= 2))
+    if (named) {
+      var parts = []
       for (var n = 0; n < groups.length; n++)
-        named.push(root.glyph(groups[n], tinted) + " " + root.escapeText(groups[n].name) + root.countSuffix(groups[n].count))
-      return named.join("\u2003")
+        parts.push(root.glyph(groups[n], tinted) + " " + root.escapeText(groups[n].name) + root.countSuffix(groups[n].count))
+      return parts.join("\u2003")
     }
 
     // maxIcons caps groups; "+N" still counts the hidden windows.
@@ -803,7 +871,7 @@ BarWidget {
             Text {
               anchors.baseline: pillNumber.baseline
               textFormat: Text.StyledText
-              text: root.iconsFor(pill.workspace, !pill.current && !pill.urgent)
+              text: root.iconsFor(pill.workspace, !pill.current && !pill.urgent, pill.current, root.detail)
               visible: text !== ""
               color: pill.textColor
               font.family: root.bar ? root.bar.fontFamily : Style.font.family
@@ -869,7 +937,7 @@ BarWidget {
           Text {
             id: scratchpadIcons
             textFormat: Text.StyledText
-            text: root.iconsFor(root.scratchpadWorkspace, true)
+            text: root.iconsFor(root.scratchpadWorkspace, true, false, 4)
             visible: text !== ""
             color: root.fgColor
             font.family: root.bar ? root.bar.fontFamily : Style.font.family
