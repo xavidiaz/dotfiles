@@ -28,6 +28,10 @@ require("default.hypr.toggles")
 -- Add any other personal Hyprland configuration below.
 -- o.window("qemu", { workspace = "5" })
 
+-- Java AWT/Swing apps (e.g. configuradorfnmt) draw blank grey windows under a
+-- non-reparenting window manager like Hyprland unless told so.
+hl.env("_JAVA_AWT_WM_NONREPARENTING", "1")
+
 -- KeePass Picker's master-password prompt: floating, kept out of screen shares
 -- and fully opaque, as Omarchy does for 1Password and Bitwarden.
 local pinentry = "^(pinentry-qt|pinentry-gtk|pinentry-gnome3|pinentry)$"

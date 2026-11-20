@@ -86,6 +86,14 @@ if command -v omarchy >/dev/null; then
   fi
 fi
 
+# Configurador FNMT-RCM: generates the keys when requesting a Spanish FNMT
+# digital certificate (sede.fnmt.gob.es). AUR repackaging of the official .deb;
+# it pulls in a Java runtime. hypr/hyprland.lua sets _JAVA_AWT_WM_NONREPARENTING
+# so its window isn't blank.
+if command -v omarchy >/dev/null; then
+  omarchy pkg aur add configuradorfnmt || echo "Failed to install configuradorfnmt from the AUR" >&2
+fi
+
 # Intel MacBook Pros (2016-2017) with the Cirrus CS8409 codec: the in-kernel
 # driver leaves the speaker amps off, so audio "plays" in silence. This DKMS
 # driver replaces it with one that drives them.
