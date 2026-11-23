@@ -47,12 +47,6 @@ if command -v omarchy >/dev/null; then
   omarchy pkg aur add blesh-git || echo "Failed to install blesh-git from the AUR" >&2
 fi
 
-# rtkit grants PipeWire real-time priority. Without it the audio threads run
-# as normal processes and Bluetooth audio skips whenever the CPU is busy.
-if command -v omarchy >/dev/null; then
-  omarchy pkg add rtkit || echo "Failed to install rtkit" >&2
-fi
-
 # Atkinson Hyperlegible fonts, designed so similar letters (I l 1, O 0, b d p q)
 # are hard to mix up: the Mono, patched with Nerd Font icons, for terminals and
 # the bar, and Next for interface text. fontconfig/ makes them the monospace
