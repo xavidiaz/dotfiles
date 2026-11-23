@@ -80,6 +80,12 @@ fi
 # open; sudo is only asked for when the rules are missing.
 if command -v omarchy >/dev/null; then
   omarchy pkg add kdeconnect sshfs kio-fuse || echo "Failed to install KDE Connect" >&2
+  # LAN only. The Bluetooth backend keeps the adapter scanning and probes every
+  # nearby device with a Serial Port service, earbuds included, which made the
+  # JLab GO Pop ANC stutter and drop. The phone pairs over Wi-Fi anyway.
+  # (Kept out of stow: ~/.config/kdeconnect also holds this machine's keys.)
+  kwriteconfig6 --file ~/.config/kdeconnect/config --group General \
+    --key disabled_providers_v2 "loopback,bluetooth"
   if systemctl is-active -q ufw && ! grep -qs '1714:1764' /etc/ufw/user.rules; then
     { sudo ufw allow 1714:1764/udp && sudo ufw allow 1714:1764/tcp; } >/dev/null \
       || echo "Failed to open the KDE Connect ports in ufw" >&2
