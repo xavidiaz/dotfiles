@@ -38,3 +38,6 @@ __pycache__/
 # hyprmoncfg's runtime record of this machine's displays (which monitor fell
 # back and when) - per-machine state, like monitors.lua.
 hyprmoncfg/.config/hyprmoncfg/display-fallbacks.json
+
+# Python bytecode (kitty kittens)
+__pycache__/

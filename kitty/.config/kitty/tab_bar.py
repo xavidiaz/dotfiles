@@ -20,10 +20,11 @@ BERTH = re.compile(r'^(.*?)([\w.-]+):([\w.-]+)$')
 SSH_VALUE_OPTS = set('BbcDEeFIiJLlmOoPpQRSWw')
 
 
-def ssh_host(tab_id):
-    """The host the tab's active window is ssh'd into, or None."""
+def ssh_destination(window):
+    """For a window running ssh in the foreground: the ssh command up to and
+    including its destination (no remote command), and the destination's host.
+    None otherwise. paste_image.py uses it too."""
     try:
-        window = get_boss().tab_for_id(tab_id).active_window
         procs = window.child.foreground_processes
     except Exception:
         return None
@@ -31,21 +32,35 @@ def ssh_host(tab_id):
         args = proc['cmdline']
         if not args or os.path.basename(args[0]) != 'ssh':
             continue
-        rest = iter(args[1:])
-        for arg in rest:
+        i = 1
+        while i < len(args):
+            arg = args[i]
             if arg == '--':
-                arg = next(rest, None)
-            elif arg.startswith('-') and len(arg) > 1:
-                # A flag cluster like -vp: a value option's value is the rest of
-                # the cluster, or the next argument when nothing is left.
-                for i, c in enumerate(arg[1:], 2):
-                    if c in SSH_VALUE_OPTS:
-                        if i == len(arg):
-                            next(rest, None)
-                        break
-                continue
-            return arg.rpartition('@')[2] if arg else None
+                i += 1
+                break
+            if not arg.startswith('-') or len(arg) == 1:
+                break
+            # A flag cluster like -vp: a value option's value is the rest of the
+            # cluster, or the next argument when nothing is left.
+            for j, c in enumerate(arg[1:], 2):
+                if c in SSH_VALUE_OPTS:
+                    if j == len(arg):
+                        i += 1
+                    break
+            i += 1
+        if i < len(args):
+            return args[:i + 1], args[i].rpartition('@')[2]
     return None
+
+
+def ssh_host(tab_id):
+    """The host the tab's active window is ssh'd into, or None."""
+    try:
+        window = get_boss().tab_for_id(tab_id).active_window
+    except Exception:
+        return None
+    dest = ssh_destination(window)
+    return dest[1] if dest else None
 
 
 def chip(fmt, text):
