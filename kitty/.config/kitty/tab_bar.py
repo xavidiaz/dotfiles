@@ -3,8 +3,9 @@
 # name as a chip (black on a background colour of its own), so windows of one
 # pod tell apart.
 #
-# A tab running ssh gets the host in front ("nixpi: ✳ Claude Code"), as ~/.bashrc
-# does over SSH: full-screen programs like Claude Code set a title of their own.
+# A tab running ssh gets the host in front as a chip of the same kind ("nixpi"
+# then "✳ Claude Code"), since ~/.bashrc's "host: " prefix over SSH is lost when
+# a full-screen program like Claude Code sets a title of its own.
 import os
 import re
 
@@ -47,15 +48,23 @@ def ssh_host(tab_id):
     return None
 
 
+def chip(fmt, text):
+    """text in black on a colour of its own, then back to the tab's colours."""
+    colour = getattr(fmt.bg, f'_{COLOURS[sum(map(ord, text)) % len(COLOURS)]}')
+    return f'{colour}{fmt.fg._000000} {text} {fmt.bg.tab}{fmt.fg.tab}'
+
+
 def draw_title(data):
     title = data['title']
+    fmt = data['fmt']
     host = ssh_host(data['tab'].tab_id)
-    if host and not title.startswith(f'{host}:'):
-        title = f'{host}: {title}'
+    prefix = ''
+    if host:
+        # The remote bash may already have put "host: " in front.
+        title = title.removeprefix(f'{host}: ')
+        prefix = chip(fmt, host) + ' '
     m = BERTH.match(title)
     if not m:
-        return title
+        return prefix + title
     head, pod, session = m.groups()
-    fmt = data['fmt']
-    colour = getattr(fmt.bg, f'_{COLOURS[sum(map(ord, session)) % len(COLOURS)]}')
-    return f'{head}{pod}:{colour}{fmt.fg._000000} {session} {fmt.bg.tab}{fmt.fg.tab}'
+    return f'{prefix}{head}{pod}:{chip(fmt, session)}'
