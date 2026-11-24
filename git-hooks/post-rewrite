@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# `git pull --rebase` rewrites instead of merging; re-stow the same way
+[ "$1" = rebase ] && exec "$(dirname "$0")/post-merge"
+exit 0

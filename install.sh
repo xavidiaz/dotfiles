@@ -120,6 +120,9 @@ if command -v quickshell >/dev/null; then
   while timeout 30 quickshell kill -p "${OMARCHY_PATH:-/usr/share/omarchy}/shell" --any-display >/dev/null 2>&1; do :; done
 fi
 
+# git-hooks/post-merge re-stows whatever a later `git pull` changes
+git config core.hooksPath git-hooks
+
 # Pre-flight: extract conflicting target paths from stow's dry-run output.
 # Stow reports conflicts in at least two different wordings, so match both:
 #   * cannot stow dotfiles/PKG/PATH over existing target PATH since ...

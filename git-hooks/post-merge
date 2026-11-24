@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# After a pull, re-stow the packages it changed: links for new files appear and
+# links to deleted ones go away, without re-running install.sh. Packages new to
+# install.sh's list are left to install.sh, which prepares their folders and
+# dependencies first. Also runs as post-rewrite after `git pull --rebase`.
+
+cd "$(git rev-parse --show-toplevel)" || exit 0
+before=$(git rev-parse -q --verify ORIG_HEAD) || exit 0
+
+listed() { sed -n '/^packages=(/,/^)/{s/packages=(//;s/)//;p}' | tr -s ' \n' '\n' | grep .; }
+known=$(git show "$before:install.sh" 2>/dev/null | listed)
+
+changed=$(git diff --name-only "$before" HEAD | cut -d/ -f1 | sort -u)
+restow=()
+for pkg in $changed; do
+  grep -qx "$pkg" <<<"$known" && [ -d "$pkg" ] && restow+=("$pkg")
+done
+if [ ${#restow[@]} -gt 0 ]; then
+  echo "Re-stowing ${restow[*]}"
+  stow -R -t "$HOME" "${restow[@]}" || echo "stow failed; run ./install.sh to back up conflicting files" >&2
+fi
+
+if ! git diff --quiet "$before" HEAD -- install.sh omarchy-plugins.txt; then
+  echo "install.sh or the plugin list changed: run ./install.sh to apply it"
+fi
+exit 0
