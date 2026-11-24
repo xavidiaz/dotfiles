@@ -1,0 +1,12 @@
+# Darky replaces its stow symlinks with plain files when it saves; re-link them.
+# The folders are watched, not the files: a watch on a symlink follows it to the
+# repo file and misses the rename that replaces the link.
+[Unit]
+Description=Re-link Darky's files into the dotfiles after Darky saves them
+
+[Path]
+PathChanged=%h/.local/state/darky
+PathChanged=%h/.config/omarchy
+
+[Install]
+WantedBy=default.target

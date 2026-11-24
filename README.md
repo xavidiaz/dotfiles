@@ -7,7 +7,7 @@ Each top-level directory is a Stow "package" that mirrors its target location un
 
 App configs (`~/.config/<name>`): `hypr`, `alacritty`, `foot`, `ghostty`, `kitty`, `nvim`, `tmux`, `btop`,
 `lazygit`, `herdr`, `hyprmoncfg`, `mise`, `wally`, `voxtype`, `xournalpp`, `autostart`,
-`git` (global git config), `mimeapps`, `starship`, `bat`, `glow`, `chawan` (JS/cookies off, enabled per site), `tuios` (leader Ctrl+Space),
+`git` (global git config), `mimeapps`, `starship`, `bat`, `glow`, `darky` (see below), `chawan` (JS/cookies off, enabled per site), `tuios` (leader Ctrl+Space),
 `fcitx5` (input-method toggle moved off Ctrl+Space so it doesn't steal the tuios/tmux prefix).
 
 Home-root files: `bash` (`.bashrc`, `.bash_profile`, `.profile`, `.bash_logout`), `codespaces` (`~/.ssh/config.d/codespaces`:
@@ -20,12 +20,12 @@ Plugins are instead listed in `omarchy-plugins.txt` (`<id> <git-url>`); `install
 `omarchy plugin add` for any that are missing and `omarchy plugin update` for the rest, so every
 machine gets the same, current plugins that `shell.json` references.
 
-Darky (light/dark switching) saves by renaming a new file over the old one, which breaks a
-symlink. `hooks/darky.d/sync-dotfiles.hook` runs after every Darky change and repairs it:
-`light-dark.conf` (in the `omarchy` package) gets its new contents moved into the repo and the
-symlink put back. Darky's settings stay a plain file in `~/.local/state/darky/`, copied to
-`_seed/darky/settings.json` minus the location; `install.sh` copies the seed into place on a
-machine that has none.
+`darky`: Darky's settings (`~/.local/state/darky/settings.json`: theme pair, schedule and
+location, so every machine switches the same themes at the same sunrise/sunset), plus a systemd
+watcher. Darky saves by renaming a new file over the old one, which breaks a symlink, so
+`darky-relink.path` (and `hooks/darky.d/relink-dotfiles.hook` after each switch) moves the new
+contents into the repo and puts the symlinks back, for `settings.json` and `omarchy`'s
+`light-dark.conf`.
 
 Not included:
 

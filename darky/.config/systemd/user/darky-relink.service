@@ -1,0 +1,6 @@
+[Unit]
+Description=Re-link Darky's files into the dotfiles
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash %h/.config/omarchy/hooks/darky.d/relink-dotfiles.hook

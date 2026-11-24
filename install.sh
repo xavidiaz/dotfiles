@@ -10,7 +10,7 @@ packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
   mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow chawan
-  fontconfig
+  fontconfig darky
 )
 
 # Real directory, so stow links only the file inside it: if stow linked the
@@ -22,6 +22,12 @@ mkdir -p "$HOME/.ssh/config.d" && chmod 700 "$HOME/.ssh"
 # omarchy-plugins.txt) next to the personal ones stowed from omarchy/, and a
 # folded link would clone them into this repo.
 mkdir -p "$HOME/.config/omarchy/plugins"
+
+# Same for Darky's state folder (only settings.json is shared; the current mode
+# and override are per machine) and systemd's user folder (systemctl enable
+# writes its links there).
+mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/darky" "$HOME/.config/systemd/user"
+chmod 700 "${XDG_STATE_HOME:-$HOME/.local/state}/darky"
 
 if ! command -v stow >/dev/null; then
   echo "GNU Stow not found. Install it first, e.g.: sudo pacman -S stow" >&2
@@ -107,6 +113,13 @@ if command -v omarchy >/dev/null && grep -qs 'CS8409' /proc/asound/card*/codec#*
   omarchy pkg aur add snd-hda-macbookpro-dkms-git || echo "Failed to install snd-hda-macbookpro-dkms-git from the AUR" >&2
 fi
 
+# Darky (inside the Omarchy shell) keeps its settings in memory and saves them
+# back the moment its file is moved aside, which would overwrite the repo's with
+# this machine's. Stop the shell while stowing; it's restarted after the plugins.
+if command -v quickshell >/dev/null; then
+  while timeout 30 quickshell kill -p "${OMARCHY_PATH:-/usr/share/omarchy}/shell" --any-display >/dev/null 2>&1; do :; done
+fi
+
 # Pre-flight: extract conflicting target paths from stow's dry-run output.
 # Stow reports conflicts in at least two different wordings, so match both:
 #   * cannot stow dotfiles/PKG/PATH over existing target PATH since ...
@@ -141,13 +154,10 @@ if command -v nvim >/dev/null; then
   nvim --headless "+Lazy! restore" +qa >/dev/null 2>&1 || echo "Failed to install Neovim plugins" >&2
 fi
 
-# Darky (the light/dark plugin) replaces symlinks when it saves, so its settings
-# are seeded as a copy instead; hooks/darky.d/sync-dotfiles.hook copies changes
-# back (and re-links light-dark.conf, which Darky also rewrites).
-darky_settings="${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json"
-if [ ! -e "$darky_settings" ]; then
-  mkdir -p "${darky_settings%/*}" && cp _seed/darky/settings.json "$darky_settings"
-fi
+# Darky (the light/dark plugin) replaces its symlinks with plain files when it
+# saves; this watcher re-links them, moving the new contents into the repo.
+systemctl --user daemon-reload
+systemctl --user enable --now darky-relink.path
 
 # monitors.lua differs per machine, so it isn't tracked, but hyprland.lua
 # requires it: start from Omarchy's default where it's missing

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Darky saves settings.json and light-dark.conf by writing a new file and
+# renaming it over the old one, which replaces their stow symlinks. Move the new
+# contents into the dotfiles and put the symlinks back, so every machine shares
+# the same themes and schedule. Runs after each Darky apply (as a darky.d hook)
+# and whenever either file changes (darky-relink.path, for panel saves that
+# apply nothing).
+
+dotfiles=$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../../../../.." && pwd)
+
+relink() {
+  local live=$1 repo=$2
+  [[ -f $live && ! -L $live && -d ${repo%/*} ]] || return 0
+  cat "$live" >"$repo" && ln -sfn "$(realpath --relative-to="${live%/*}" "$repo")" "$live"
+}
+
+relink "${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/light-dark.conf" \
+  "$dotfiles/omarchy/.config/omarchy/light-dark.conf"
+relink "${XDG_STATE_HOME:-$HOME/.local/state}/darky/settings.json" \
+  "$dotfiles/darky/.local/state/darky/settings.json"
