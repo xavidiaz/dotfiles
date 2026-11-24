@@ -227,5 +227,9 @@ HISTIGNORE='ls:ll:cd:cd -:pwd:exit:clear:history'
 __history_sync() { builtin history -a; builtin history -n; }
 PROMPT_COMMAND+=(__history_sync)
 
+# Custom aliases a container keeps in its persistent state (e.g. a berth pod).
+# Loaded late so they override the ones above.
+[[ -r /root/.state/aliases ]] && source /root/.state/aliases
+
 # Keep last
 [[ ! ${BLE_VERSION-} ]] || ble-attach
