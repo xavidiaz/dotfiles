@@ -173,7 +173,8 @@ var cacheCount = 0
 var cacheLimit = 500
 
 // Returns { icon, name, tint } for a window, plus `terminal: true` for
-// terminals. `tint` is "" when the icon keeps the bar's text colour.
+// terminals and `browser: true` for a browser on a site not in `sites`.
+// `tint` is "" when the icon keeps the bar's text colour.
 function resolve(cls, title) {
   var key = cls + "\u0001" + title
   var hit = cache[key]
@@ -191,6 +192,8 @@ function resolve(cls, title) {
     result = inner ? { icon: inner.icon, name: inner.name } : { icon: app.icon, name: app.name }
     // Terminals carry their kind so the bar can name them by their title.
     if (app.kind === TERMINAL) result.terminal = true
+    // A browser on a site not in `sites`: the bar names it from the title.
+    if (app.kind === BROWSER && !inner) result.browser = true
   }
   result.tint = tintFor(result.name)
 

@@ -554,10 +554,14 @@ BarWidget {
   // (the one in kitty's tab bar), since "Claude Code" says nothing about which
   // session it is; a bare path like "~" says even less, so that stays the app.
   // How long that title may get depends on the detail level below.
+  // A browser on a site the rules do not know goes by the site, which most
+  // pages put last in their title ("Hello – Wikipedia" -> "Wikipedia").
   function chipName(toplevel, app, maxTitle) {
-    if (!app.terminal) return app.name
+    if (!app.terminal && !app.browser) return app.name
     var title = root.cleanTitle(root.windowTitle(toplevel), app.name)
-    if (title === "" || /^[~\/]/.test(title)) return app.name
+    if (app.browser) title = root.siteFromTitle(title)
+    else if (/^[~\/]/.test(title)) return app.name
+    if (title === "") return app.name
     return title.length > maxTitle ? title.slice(0, maxTitle - 1) + "…" : title
   }
 
@@ -625,6 +629,13 @@ BarWidget {
       total += Style.spaceReal(16) + (i > 0 ? Style.spaceReal(4) : 0)
     }
     return total
+  }
+
+  // The last part of a page title after a " – ", " - ", " | " or " · "
+  // separator, or the whole title when it has none.
+  function siteFromTitle(title) {
+    var parts = String(title).split(/\s+[–—|·-]\s+/)
+    return parts[parts.length - 1].replace(/^\s+|\s+$/g, "")
   }
 
   // Windows grouped by what they are (glyph plus name), in first-seen order.
