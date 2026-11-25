@@ -28,7 +28,8 @@ SGR = re.compile(r'\x1b\[([0-9;:]*)m')
 ANY_ESC = re.compile(r'\x1b\[[0-9;:?]*[A-Za-z]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
 LIST_ITEM = re.compile(r'^(?:[-*•+]|\d+[.)])\s+\S')
 SENTENCE_END = re.compile(r'[.!?:;…]["\'`)\]*_]*$')
-CARD_HEADER = re.compile(r'^\s*\S*\s+⧉ copy\s*$')     # the code-cards mod's header row
+# The code-cards mod's header row: "<icon> <lang> … <icon> Copy" (or "Copied")
+CARD_HEADER = re.compile(r'^\s*(?:\S\s+)?\S*\s+(?:⧉ copy|\S Copy|\S Copied)\s*$')
 UI_LEAD = ('⎿', '❯', '✻', '✳', '⏺', '⏵', '▔', '─', '╭', '╰', '│')
 
 
