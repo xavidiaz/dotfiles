@@ -3,8 +3,9 @@ claude = "latest"
 codex = "latest"
 dotnet = "latest"
 gh = "latest"
-node = "26.8.1"
+node = "26.13.1"
 opencode = "latest"
+pi = "1.6.1"
 uv = "latest"
 
 [settings.upgrade]

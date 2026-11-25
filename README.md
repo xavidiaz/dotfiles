@@ -41,6 +41,32 @@ marketplace in place, so an edit here applies after `/reload-plugins`. Currently
 
 - `code-cards`: code blocks in replies drawn as Obsidian-style cards with a Copy button.
 
+## Pi (`pi-settings.json`)
+
+The [Pi coding agent](https://pi.dev) comes from Omarchy's mise tools; `mise/` pins it
+(`pi = "1.6.1"`, so Omarchy's 4-hourly `latest` doesn't move it) and Node (`26.13.1`).
+Pi rewrites `~/.pi/agent/settings.json` itself, so it isn't stowed: `install.sh` merges
+`pi-settings.json` into it with `jq`, then runs `pi update --extensions` to install the packages.
+`ifMissing` (the default Azure provider and model) only fills in keys a machine lacks, because Pi
+saves the model you pick with `/model` there. `always` (the enabled models, and the packages
+pinned to exact versions) wins on every run. Keys the file doesn't name, such as `theme`, stay
+as each machine has them.
+
+Packages: `@nuclear-ant/pi-code-blocks@0.1.2`, code blocks as bordered panels with a [Copy]
+button. Reviewed at that version: no install scripts, no network calls, copies only through Pi's
+`copyToClipboard` (wl-copy on Wayland). It patches Pi internals, so re-check it before raising
+Pi's pin. Review any package's code before adding it here.
+
+Not included, per machine: the Azure login. In `pi`, run `/login azure` and paste the API key,
+then add the endpoint to that credential in `~/.pi/agent/auth.json`:
+
+```json
+"azure": { "type": "api_key", "key": "…", "env": { "AZURE_OPENAI_BASE_URL": "https://<resource>.openai.azure.com/openai/v1" } }
+```
+
+Also left alone: `extensions/herdr-agent-state.ts` (herdr installs it), `themes/` (Omarchy
+generates it) and the `skills/` links into Omarchy.
+
 ## `_system-reference/`
 
 Not a Stow package — just a copy of system-level (root-owned) config files for reference, since
