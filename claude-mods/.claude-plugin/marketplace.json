@@ -1,0 +1,5 @@
+{
+  "name": "dotfiles-mods",
+  "owner": { "name": "Javier Diaz Urbano" },
+  "plugins": [{ "name": "code-cards", "source": "./code-cards" }]
+}

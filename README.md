@@ -32,6 +32,15 @@ Not included:
 - `gh` (GitHub CLI config) — just run `gh auth login` on the new machine instead.
 - Browser profiles (Brave/Chrome/Edge/Chromium) — not dotfiles, don't belong in git.
 
+## `claude-mods/`
+
+Not a Stow package: a Claude Code plugin marketplace holding personal mods, which `install.sh`
+adds and installs from (`claude plugin marketplace add ~/dotfiles/claude-mods`, then
+`claude plugin install <mod>@dotfiles-mods --scope user`). Claude Code runs a plugin from a folder
+marketplace in place, so an edit here applies after `/reload-plugins`. Currently:
+
+- `code-cards`: code blocks in replies drawn as Obsidian-style cards with a Copy button.
+
 ## `_system-reference/`
 
 Not a Stow package — just a copy of system-level (root-owned) config files for reference, since

@@ -220,4 +220,15 @@ if [ -x "$read_aloud" ] && "$read_aloud" check | grep -qE '"installed":false|"up
   "$read_aloud" setup || echo "Failed to set up Read Aloud" >&2
 fi
 
+# Claude Code mods (claude-mods/): the folder is a plugin marketplace, and an
+# installed plugin from a folder marketplace runs from that folder itself, so
+# edits here reach Claude Code after /reload-plugins, with no reinstall.
+if command -v claude >/dev/null; then
+  claude plugin marketplace add "$PWD/claude-mods" >/dev/null 2>&1 || true
+  for mod in code-cards; do
+    claude plugin install "$mod@dotfiles-mods" --scope user >/dev/null \
+      || echo "Failed to install Claude Code mod $mod" >&2
+  done
+fi
+
 echo "Done. Remember: gh auth login, and see README.md for _system-reference/ (keyd)."

@@ -1,0 +1,1 @@
+{ "name": "code-cards", "version": "0.2.0", "description": "Code blocks in replies drawn as shaded cards with their language and a copy button", "types": "./types/index.d.ts" }
