@@ -28,11 +28,12 @@ SGR = re.compile(r'\x1b\[([0-9;:]*)m')
 ANY_ESC = re.compile(r'\x1b\[[0-9;:?]*[A-Za-z]|\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)')
 LIST_ITEM = re.compile(r'^(?:[-*•+]|\d+[.)])\s+\S')
 SENTENCE_END = re.compile(r'[.!?:;…]["\'`)\]*_]*$')
+CARD_HEADER = re.compile(r'^\s*\S*\s+⧉ copy\s*$')     # the code-cards mod's header row
 UI_LEAD = ('⎿', '❯', '✻', '✳', '⏺', '⏵', '▔', '─', '╭', '╰', '│')
 
 
 class Row:
-    __slots__ = ('start', 'cells', 'raw', 'text', 'soft', 'hl', 'bold', 'ui', 'tail')
+    __slots__ = ('start', 'cells', 'raw', 'text', 'soft', 'hl', 'bold', 'ui', 'tail', 'card')
 
     def __init__(self, start: int, raw: str, soft: bool) -> None:
         self.start = start              # offset of the row in the hints text
@@ -44,6 +45,7 @@ class Row:
         self.bold = False               # all its text is bold (a heading)
         self.ui = False                 # starts in grey: Claude Code's own UI text
         self.tail = 0                   # grey UI text at its end (" · summary")
+        self.card = False               # drawn on a background colour (a code card)
 
     @property
     def end(self) -> int:
@@ -102,23 +104,26 @@ def screen_ansi() -> list[str] | None:
     return re.split(r'\r\n|\r|\n', out)
 
 
-def row_style(ansi_row: str) -> tuple[bool, bool, bool, int]:
+def row_style(ansi_row: str) -> tuple[bool, bool, bool, int, bool]:
     """(has a basic-palette foreground colour, every visible character is bold,
     the first visible text is grey truecolor, length of the grey text at its end).
     A leading "●" bullet is ignored."""
-    hl, bold, grey = False, False, False
+    hl, bold, grey, bg, on_bg = False, False, False, False, False
     segs: list[tuple[str, bool, bool]] = []     # (text, bold, grey)
     pos = 0
     for m in list(SGR.finditer(ansi_row)) + [None]:
         seg = ANY_ESC.sub('', ansi_row[pos:m.start() if m else len(ansi_row)])
         if seg:
             segs.append((seg, bold, grey))
+            on_bg = on_bg or (bg and bool(seg.strip()))
         if m is None:
             break
         pos = m.end()
         params = m.group(1)
         if ':' in params:       # 38:2:r:g:b truecolor (Claude Code's inline code, UI)
             f = params.split(':')
+            if f[0] == '48':
+                bg = True
             if f[0] == '38':
                 rgb = [x for x in f[2:] if x][-3:]
                 # mid grey only: black/white are the theme's normal text
@@ -128,6 +133,8 @@ def row_style(ansi_row: str) -> tuple[bool, bool, bool, int]:
         i = 0
         while i < len(parts):
             p = parts[i]
+            if p == '48':
+                bg = True
             if p in ('38', '48', '58'):      # extended colour in ; form, skip its args
                 i += 3 if i + 1 < len(parts) and parts[i + 1] == '5' else 5
                 continue
@@ -140,6 +147,10 @@ def row_style(ansi_row: str) -> tuple[bool, bool, bool, int]:
                 bold = False
             if n in (0, 39) or 30 <= n <= 37 or 90 <= n <= 97:
                 grey = False
+            if 40 <= n <= 47 or 100 <= n <= 107:
+                bg = True
+            elif n in (0, 49):
+                bg = False
             i += 1
     if segs and segs[0][0].lstrip()[:1] in '●⏺':
         t, b, g = segs[0]
@@ -156,7 +167,7 @@ def row_style(ansi_row: str) -> tuple[bool, bool, bool, int]:
         if not g:
             break
         tail += len(t)
-    return hl, all_bold, ui, tail
+    return hl, all_bold, ui, tail, on_bg
 
 
 def apply_colours(rows: list[Row]) -> None:
@@ -169,7 +180,7 @@ def apply_colours(rows: list[Row]) -> None:
         # The screen may have changed since the hints snapshot: only trust rows
         # whose text still matches.
         if ANY_ESC.sub('', a).rstrip() == row.text.rstrip():
-            row.hl, row.bold, row.ui, row.tail = row_style(a)
+            row.hl, row.bold, row.ui, row.tail, row.card = row_style(a)
 
 
 # Cleaning ##########################################################################
@@ -280,8 +291,8 @@ def fenced_blocks(rows: list[Row]) -> tuple[list[tuple[int, int, str]], set[int]
 # Claude Code answers ###############################################################
 
 def is_prose(chunk: list[Row], lines: list[str]) -> bool:
-    if any(r.hl for r in chunk):
-        return False                    # syntax-highlighted
+    if any(r.hl or r.card for r in chunk):
+        return False                    # syntax-highlighted, or on a code card
     if all(r.bold for r in chunk if not r.blank):
         return True                     # heading or bold sentence
     first = lines[0].strip()
@@ -334,7 +345,8 @@ def claude_blocks(rows: list[Row], width: int, used_rows: set[int]) -> list[tupl
         # Chunks between blank rows
         chunks: list[list[int]] = [[]]
         for i in reg:
-            if rows[i].blank or (rows[i].ui and i not in heads) or i in used_rows:
+            ui = rows[i].ui and not rows[i].card and i not in heads
+            if rows[i].blank or ui or i in used_rows or CARD_HEADER.match(rows[i].text):
                 if chunks[-1]:
                     chunks.append([])
             else:
@@ -347,7 +359,7 @@ def claude_blocks(rows: list[Row], width: int, used_rows: set[int]) -> list[tupl
             if c[0] in heads:           # the "● " bullet sits in the message indent
                 lines[0] = '  ' + lines[0][2:]
             if not is_prose(rws, lines):
-                code.append((c, lines, any(r.hl for r in rws)))
+                code.append((c, lines, any(r.hl or r.card for r in rws)))
         # Highlighted chunks one blank row apart are one block (blank line in code)
         merged = []
         for c, lines, hl in code:
