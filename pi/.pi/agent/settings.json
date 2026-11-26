@@ -1,0 +1,13 @@
+{
+  "defaultProvider": "azure",
+  "defaultModel": "azure/gpt-5-mini",
+  "theme": "omarchy-system",
+  "enabledModels": [
+    "azure/gpt-oss-120-b",
+    "azure/gpt-5-mini",
+    "azure/gpt-4.1-mini"
+  ],
+  "packages": [
+    "npm:@nuclear-ant/pi-code-blocks@0.1.2"
+  ]
+}

@@ -7,7 +7,7 @@ Each top-level directory is a Stow "package" that mirrors its target location un
 
 App configs (`~/.config/<name>`): `hypr`, `alacritty`, `foot`, `ghostty`, `kitty`, `nvim`, `tmux`, `btop`,
 `lazygit`, `herdr`, `hyprmoncfg`, `mise`, `wally`, `voxtype`, `xournalpp`, `autostart`,
-`git` (global git config), `mimeapps`, `starship`, `bat`, `glow`, `darky` (see below), `chawan` (JS/cookies off, enabled per site), `tuios` (leader Ctrl+Space),
+`git` (global git config), `mimeapps`, `starship`, `bat`, `glow`, `darky` (see below), `pi` (see Pi), `chawan` (JS/cookies off, enabled per site), `tuios` (leader Ctrl+Space),
 `fcitx5` (input-method toggle moved off Ctrl+Space so it doesn't steal the tuios/tmux prefix).
 
 Home-root files: `bash` (`.bashrc`, `.bash_profile`, `.profile`, `.bash_logout`), `codespaces` (`~/.ssh/config.d/codespaces`:
@@ -41,16 +41,14 @@ marketplace in place, so an edit here applies after `/reload-plugins`. Currently
 
 - `code-cards`: code blocks in replies drawn as Obsidian-style cards with a Copy button.
 
-## Pi (`pi-settings.json`)
+## Pi (`pi`)
 
 The [Pi coding agent](https://pi.dev) comes from Omarchy's mise tools; `mise/` pins it
 (`pi = "1.6.1"`, so Omarchy's 4-hourly `latest` doesn't move it) and Node (`26.13.1`).
-Pi rewrites `~/.pi/agent/settings.json` itself, so it isn't stowed: `install.sh` merges
-`pi-settings.json` into it with `jq`, then runs `pi update --extensions` to install the packages.
-`ifMissing` (the default Azure provider and model) only fills in keys a machine lacks, because Pi
-saves the model you pick with `/model` there. `always` (the enabled models, and the packages
-pinned to exact versions) wins on every run. Keys the file doesn't name, such as `theme`, stay
-as each machine has them.
+`~/.pi/agent/settings.json` is stowed from `pi/`, so every machine shares the same settings:
+the default Azure provider and model (`/model` changes it everywhere), the enabled models, and the
+packages pinned to exact versions. Pi saves through the symlink, so changes land in the repo.
+`install.sh` then runs `pi update --extensions` to install those packages.
 
 Packages: `@nuclear-ant/pi-code-blocks@0.1.2`, code blocks as bordered panels with a [Copy]
 button. Reviewed at that version: no install scripts, no network calls, copies only through Pi's

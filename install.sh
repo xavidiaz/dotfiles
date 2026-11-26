@@ -10,7 +10,7 @@ packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
   mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow chawan
-  fontconfig darky
+  fontconfig darky pi
 )
 
 # Real directory, so stow links only the file inside it: if stow linked the
@@ -27,6 +27,10 @@ mkdir -p "$HOME/.config/omarchy/plugins"
 # and override are per machine) and systemd's user folder (systemctl enable
 # writes its links there).
 mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/darky" "$HOME/.config/systemd/user"
+
+# And Pi's agent folder: only settings.json is shared; auth.json (the Azure key)
+# sits next to it and must never be linked into this public repo.
+mkdir -p "$HOME/.pi/agent"
 chmod 700 "${XDG_STATE_HOME:-$HOME/.local/state}/darky"
 
 if ! command -v stow >/dev/null; then
@@ -220,30 +224,13 @@ if [ -x "$read_aloud" ] && "$read_aloud" check | grep -qE '"installed":false|"up
   "$read_aloud" setup || echo "Failed to set up Read Aloud" >&2
 fi
 
-# Pi coding agent: mise/ pins its version. Pi rewrites ~/.pi/agent/settings.json
-# itself, so it isn't stowed; pi-settings.json is merged in instead, keeping this
-# machine's own keys. Its "ifMissing" keys only fill gaps (Pi saves the model
-# picked with /model as defaultModel, and a re-run mustn't undo that); its
-# "always" keys win, and a package listed there replaces any other version of
-# that package. Then Pi installs the packages at those versions. The Azure login
-# (key plus endpoint) stays per machine and out of this public repo; see README.md.
-if command -v mise >/dev/null && command -v jq >/dev/null; then
+# Pi coding agent: mise/ pins its version, and its settings are stowed from pi/
+# (Pi saves through the symlink). Install the packages that settings.json lists,
+# at those versions. The Azure login (key plus endpoint) stays per machine and
+# out of this public repo; see README.md.
+if command -v mise >/dev/null; then
   mise install pi >/dev/null 2>&1 || echo "Failed to install Pi" >&2
-  pi_settings="$HOME/.pi/agent/settings.json"
-  mkdir -p "${pi_settings%/*}"
-  [ -s "$pi_settings" ] || echo '{}' >"$pi_settings"
-  if jq --slurpfile f pi-settings.json '
-      def name: (if type == "string" then . else .source end) | sub("@[^@/]+$"; "");
-      ($f[0].always.packages // []) as $new | ($new | map(name)) as $names
-      | ($f[0].ifMissing // {}) * . * ($f[0].always // {} | del(.packages))
-      | .packages = ([(.packages // [])[] | select(name | IN($names[]) | not)] + $new)
-    ' "$pi_settings" >"$pi_settings.tmp"; then
-    mv "$pi_settings.tmp" "$pi_settings"
-    mise exec pi -- pi update --extensions >/dev/null || echo "Failed to install Pi packages" >&2
-  else
-    rm -f "$pi_settings.tmp"
-    echo "Failed to merge pi-settings.json into $pi_settings" >&2
-  fi
+  mise exec pi -- pi update --extensions >/dev/null || echo "Failed to install Pi packages" >&2
 fi
 
 # Claude Code mods (claude-mods/): the folder is a plugin marketplace, and an
