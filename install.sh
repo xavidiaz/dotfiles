@@ -10,7 +10,7 @@ packages=(
   hypr alacritty foot ghostty kitty nvim tmux btop lazygit
   herdr hyprmoncfg mise wally voxtype xournalpp autostart git
   mimeapps starship bash omarchy tuios fcitx5 codespaces bat glow chawan
-  fontconfig darky pi
+  fontconfig darky pi bin
 )
 
 # Real directory, so stow links only the file inside it: if stow linked the
@@ -31,6 +31,10 @@ mkdir -p "${XDG_STATE_HOME:-$HOME/.local/state}/darky" "$HOME/.config/systemd/us
 # And Pi's agent folder: only settings.json is shared; auth.json (the Azure key)
 # sits next to it and must never be linked into this public repo.
 mkdir -p "$HOME/.pi/agent"
+
+# And ~/.local/bin: other tools put their own programs there (e.g. the iMac's
+# berth and cs links), which a folded link would put in this repo.
+mkdir -p "$HOME/.local/bin"
 chmod 700 "${XDG_STATE_HOME:-$HOME/.local/state}/darky"
 
 if ! command -v stow >/dev/null; then

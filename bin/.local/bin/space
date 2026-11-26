@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+# space: open sessions of a berth pod (shpool or abduco, `berth attach`
+# picks), the first in this terminal and
+# each other one in a Kitty window of its own.
+#   space                         list pods
+#   space [pod] <session...>      pod may be left out when there is only one
+#   space <pod>                   session "main"
+# On the iMac (the pod's container is local) windows run `podman exec`
+# directly; anywhere else they go through `kitten ssh` to $BERTH_HOST.
+# Self-contained, so it can be copied to the MacBook as is.
+set -euo pipefail
+
+HOST=${BERTH_HOST:-imac}
+# Remote path to berth, relative to the remote home (ssh starts there).
+REMOTE_BERTH=${BERTH_REMOTE_BIN:-Podspace/bin/berth}
+# Set SPACE_DRY_RUN=1 to print the window commands instead of opening them.
+DRY_RUN=${SPACE_DRY_RUN:-0}
+
+die() { echo "space: $*" >&2; exit 1; }
+
+on_imac() { command -v podman >/dev/null && [[ -x $HOME/$REMOTE_BERTH ]]; }
+
+berth() {
+  if on_imac; then
+    "$HOME/$REMOTE_BERTH" "$@"
+  else
+    ssh -o ClearAllForwardings=yes "$HOST" "$REMOTE_BERTH $*"
+  fi
+}
+
+# App ports: one background ssh holds the LocalForwards of $HOST's ssh config,
+# so the session windows (ClearAllForwardings) never compete for them.
+# Skipped when every forwarded port is already listening here. Without
+# ExitOnForwardFailure (ssh's default: no), ports another forward already holds
+# just warn, so a port added to the config later gets its own process.
+start_forwards() {
+  local p missing=0
+  while read -r p; do
+    ss -Htln "sport = :$p" | grep -q . || missing=1
+  done < <(ssh -G "$HOST" | awk '$1 == "localforward" { n = split($2, a, ":"); print a[n] }')
+  ((missing)) || return 0
+  ssh -f -N "$HOST" 2>/dev/null \
+    || echo "space: app port forwards not started (ssh $HOST failed)" >&2
+}
+
+# Pods, running ones first, each with its sessions underneath (● someone
+# attached, ○ not; + abduco: command exited, waiting to be collected) and the
+# host ports to open in the browser. Colour only on a terminal.
+list() {
+  local b="" d="" g="" r="" name state boot branch ports image p hosts line
+  if [[ -t 1 ]]; then
+    b=$'\e[1m' d=$'\e[2m' g=$'\e[32m' r=$'\e[0m'
+  fi
+  local rows
+  rows=$(berth ls --tsv | sort -t $'\t' -k2,2 -k1,1)
+  [[ -n $rows ]] || { echo "no pods on $HOST"; return; }
+  # Tabs become \x1f: read merges runs of whitespace separators, so an empty
+  # field (a pod without ports) would shift the ones after it.
+  while IFS=$'\x1f' read -r name state boot branch ports image; do
+    hosts=""
+    for p in $ports; do hosts+=" ${p#*:}"; done
+    image=${image#berth-}
+    if [[ $state == active ]]; then
+      printf '%s●%s %s%-10s%s %-12s %s%s%s' "$g" "$r" "$b" "$name" "$r" "${image%:latest}" "$d" "boot $boot" "$r"
+    else
+      printf '%s○ %-10s %-12s %s%s' "$d" "$name" "${image%:latest}" "boot $boot" "$r"
+    fi
+    [[ -n $hosts ]] && printf '  ports%s' "$hosts"
+    echo
+    printf '  %s%-10s%s %s\n' "$d" "branch" "$r" "${branch//,/, }"
+    if [[ $state == active ]]; then
+      line=$(berth sessions "$name" | awk -v g="$g" -v r="$r" -v d="$d" 'NR > 1 {
+        mark = ($1 == "*") ? g "●" r : ($1 == "+") ? "+" : d "○" r
+        printf "%s %s   ", $NF, mark; n++ }
+        END { if (!n) printf "%s(none)%s", d, r }')
+      printf '  %s%-10s%s %s\n' "$d" "sessions" "$r" "$line"
+    fi
+    echo
+  done <<<"$({ grep -P '\tactive\t' <<<"$rows"; grep -vP '\tactive\t' <<<"$rows"; } | tr '\t' '\037')"
+}
+
+usage() {
+  cat <<'EOF'
+usage: space [pod] [session...]
+
+  space                       list pods, their sessions and host ports
+  space <pod>                 open the pod's "main" session
+  space <pod> <session...>    open sessions (created if new); the first takes
+                              over this terminal, each other one gets its own
+                              Kitty window
+  space <session...>          same, when there is only one pod
+  space stop <pod>            stop the pod (its sessions end; /work, state and
+                              data are kept; boot setting unchanged)
+  space start <pod>           start it again
+  space restart <pod>         stop + start
+  space -h | --help           this help
+
+In a session:
+  leave, keep it running      close the window (shpool pods: or Ctrl+Space, Ctrl+q;
+                              abduco pods: or Ctrl+\)
+  end it for good             exit, or Ctrl+D at the prompt
+  per-pod aliases             /root/.state/aliases
+  browser                     http://localhost:<host port from the list>
+
+Environment:
+  BERTH_HOST          ssh host of the iMac (default: imac)
+  BERTH_REMOTE_BIN    berth's path on it (default: Podspace/bin/berth)
+  SPACE_DRY_RUN=1     print the window commands instead of opening them
+EOF
+}
+
+case ${1:-} in
+  -h | --help) usage; exit ;;
+  start | stop | restart)
+    [[ -n ${2:-} && $# == 2 ]] || die "usage: space $1 <pod>"
+    berth ls --tsv | cut -f1 | grep -qx -- "$2" || die "no pod '$2' on $HOST"
+    berth "$1" "$2"
+    berth ls --tsv | awk -F '\t' -v p="$2" '$1 == p { print p ": " $2 }'
+    exit
+    ;;
+  -*) usage >&2; exit 2 ;;
+esac
+
+if (($# == 0)); then
+  list
+  exit
+fi
+
+mapfile -t pods < <(berth ls --tsv | cut -f1)
+((${#pods[@]})) || die "no pods on $HOST"
+if printf '%s\n' "${pods[@]}" | grep -qx -- "$1"; then
+  pod=$1
+  shift
+elif ((${#pods[@]} == 1)); then
+  pod=${pods[0]}
+else
+  die "'$1' is not a pod; pods: ${pods[*]} (usage: space [pod] <session...>)"
+fi
+sessions=("$@")
+((${#sessions[@]})) || sessions=(main)
+for s in "${sessions[@]}"; do
+  [[ $s =~ ^[A-Za-z0-9_-]+$ ]] || die "invalid session name '$s'"
+done
+
+if ! on_imac && ((!DRY_RUN)); then
+  start_forwards
+fi
+
+session_cmd() {
+  if on_imac; then
+    # berth attach picks shpool or abduco for the pod.
+    cmd=("$HOME/$REMOTE_BERTH" attach "$pod" "$1")
+  else
+    cmd=(kitten ssh -t -o ClearAllForwardings=yes "$HOST" "$REMOTE_BERTH attach $pod $1")
+  fi
+}
+
+# Run from a terminal, the first session takes over this window (it closes
+# on detach); the others get windows of their own.
+here=""
+if [[ -t 0 && -t 1 ]]; then
+  here=${sessions[0]}
+  sessions=("${sessions[@]:1}")
+fi
+
+for s in "${sessions[@]}"; do
+  session_cmd "$s"
+  if ((DRY_RUN)); then
+    printf '%q ' kitty --detach --title "$pod:$s" "${cmd[@]}"
+    echo
+  else
+    kitty --detach --title "$pod:$s" "${cmd[@]}"
+  fi
+done
+
+if [[ -n $here ]]; then
+  session_cmd "$here"
+  if ((DRY_RUN)); then
+    printf '%q ' "${cmd[@]}"
+    echo
+  else
+    printf '\e]2;%s\a' "$pod:$here"
+    exec "${cmd[@]}"
+  fi
+fi
