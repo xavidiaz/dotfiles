@@ -93,6 +93,10 @@ usage: space [pod] [session...]
                               data are kept; boot setting unchanged)
   space start <pod>           start it again
   space restart <pod>         stop + start
+  space close <pod> <session...>
+                              end sessions for good (shells and programs in
+                              them stop; windows on them close)
+  space close <pod> --all     end every session of the pod
   space -h | --help           this help
 
 In a session:
@@ -116,6 +120,13 @@ case ${1:-} in
     berth ls --tsv | cut -f1 | grep -qx -- "$2" || die "no pod '$2' on $HOST"
     berth "$1" "$2"
     berth ls --tsv | awk -F '\t' -v p="$2" '$1 == p { print p ": " $2 }'
+    exit
+    ;;
+  close)
+    [[ -n ${2:-} && $# -ge 3 ]] || die "usage: space close <pod> <session...> | --all"
+    berth ls --tsv | cut -f1 | grep -qx -- "$2" || die "no pod '$2' on $HOST"
+    shift
+    berth close "$@"
     exit
     ;;
   -*) usage >&2; exit 2 ;;
